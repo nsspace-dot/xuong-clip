@@ -11,18 +11,18 @@ function vKichban(){
   var h='<h1>Kịch bản tuần này</h1><p class="sub">Tải file kịch bản lên hoặc dán văn bản, sửa thoải mái trong bảng bên dưới, rồi cho tool ghép cảnh.</p>';
   h+='<div class="box"><h2>1. Nạp kịch bản</h2><div class="row2"><div><label class="lab" for="file">Tải file (.txt, .csv, .md)</label><input type="file" id="file" accept=".txt,.csv,.md,text/plain"><div class="meta">Bản thật sẽ đọc được cả PDF, Word và Google Sheet. Bản thô chỉ nhận văn bản theo mẫu dưới đây.</div></div></div>'+
     '<label class="lab" for="paste" style="margin-top:10px">Hoặc dán văn bản kịch bản</label><textarea id="paste" rows="7" style="min-height:120px" placeholder="## TV9 | Tường Vip | Lịch laser | Review 3 size&#10;Lời thoại | Cảnh cần | cụm trong thoại=chữ hiện">'+esc(S.paste)+'</textarea>'+
-    '<details><summary>Định dạng văn bản</summary><pre>## Mã | Gian | Sản phẩm | Tên clip | (Người, bỏ trống là DIỄM)\nLời thoại | Cảnh cần thấy | cụm trong thoại=chữ hiện trên hình; cụm khác=chữ khác\n(mỗi dòng thoại một dòng, bỏ trống ô cuối nếu không cần chữ thông tin)</pre></details>'+
+    '<details><summary>Định dạng văn bản</summary><pre>## Mã | Gian | Sản phẩm | Tên clip | (Người phụ trách, bỏ trống là người đầu tiên trong danh sách ở Cài đặt)\nLời thoại | Cảnh cần thấy | cụm trong thoại=chữ hiện trên hình; cụm khác=chữ khác\n(mỗi dòng thoại một dòng, bỏ trống ô cuối nếu không cần chữ thông tin)</pre></details>'+
     '<div class="bar"><button class="btn pri" data-act="load">Nạp vào danh sách</button><button class="btn" data-act="newweek" '+(CLIPS.length?'':'disabled')+'>Bắt đầu tuần mới (xóa danh sách)</button></div></div>';
   if(!CLIPS.length)return h+'<div class="empty">Chưa có clip nào. Tải file hoặc dán văn bản kịch bản rồi bấm "Nạp vào danh sách".</div>';
   var cnt={};CLIPS.forEach(function(c){var k=st(c);cnt[k]=(cnt[k]||0)+1});
   h+='<div class="sumrow">'+['chuaghep','missing','loi','ready','exported'].map(function(k){return '<div class="sum"><b>'+(cnt[k]||0)+'</b><span>'+STAT[k]+'</span></div>'}).join('')+'</div>';
   h+='<div class="box"><h2>2. Danh sách clip ('+CLIPS.length+')</h2><div class="tbl"><table><thead><tr><th>Mã</th><th>Gian</th><th>Sản phẩm</th><th>Tên</th><th>Dòng</th><th>Trạng thái</th><th></th></tr></thead><tbody>'+
    CLIPS.map(function(c){return '<tr><td><b>'+esc(c.id)+'</b></td><td>'+esc(c.g)+'</td><td>'+esc(c.prod)+'</td><td>'+esc(c.name)+'</td><td class="mono">'+c.lines.length+'</td><td>'+pill(st(c))+'</td><td><button class="btn sm" data-edit="'+esc(c.id)+'">Sửa</button> <button class="btn sm" data-delclip="'+esc(c.id)+'">Xóa</button></td></tr>'}).join('')+
-   '</tbody></table></div><div class="bar"><button class="btn pri" data-act="autoall">Ghép cảnh tự động cho tất cả</button><span class="meta">Clip Oanh quay (ngoài tool) sẽ được bỏ qua.</span></div></div>';
+   '</tbody></table></div><div class="bar"><button class="btn pri" data-act="autoall">Ghép cảnh tự động cho tất cả</button><span class="meta">Clip của người quay trực tiếp (đánh dấu ở Cài đặt) sẽ được bỏ qua.</span></div></div>';
   var c=clip(S.edit);
   if(c){
     h+='<div class="box"><h2>3. Sửa kịch bản: '+esc(c.id)+'</h2><div class="row2" style="margin-bottom:10px">'+
-     [['id','Mã'],['g','Gian'],['prod','Sản phẩm'],['name','Tên clip'],['who','Người làm']].map(function(f){return '<div><label class="lab" for="f_'+f[0]+'">'+f[1]+'</label><input type="text" id="f_'+f[0]+'" data-ecf="'+f[0]+'" value="'+esc(c[f[0]])+'"></div>'}).join('')+'</div>'+
+     [['id','Mã'],['g','Gian'],['prod','Sản phẩm'],['name','Tên clip'],['who','Người phụ trách']].map(function(f){if(f[0]==='who')return whoSelect(c);return '<div><label class="lab" for="f_'+f[0]+'">'+f[1]+'</label><input type="text" id="f_'+f[0]+'" data-ecf="'+f[0]+'" value="'+esc(c[f[0]])+'"></div>'}).join('')+'</div>'+
      '<div class="ed meta"><span>Lời thoại</span><span>Cảnh cần thấy</span><span>Chữ thông tin (cụm=chữ; ...)</span><span></span></div>';
     c.lines.forEach(function(l,i){h+='<div class="ed"><textarea data-el="'+i+'|t" aria-label="Lời thoại dòng '+(i+1)+'">'+esc(l.t)+'</textarea><textarea data-el="'+i+'|need" aria-label="Cảnh cần dòng '+(i+1)+'">'+esc(l.need)+'</textarea><textarea data-el="'+i+'|inf" aria-label="Chữ thông tin dòng '+(i+1)+'">'+esc(infosStr(l))+'</textarea><button class="btn sm" data-dl="'+i+'">Xóa dòng</button></div>'});
     h+='<div class="bar"><button class="btn sm" data-act="addline">+ Thêm dòng</button><button class="btn pri" data-auto="'+esc(c.id)+'">Ghép cảnh tự động clip này</button><a class="btn" href="#ghep" data-cur="'+esc(c.id)+'">Mở trang ghép</a></div></div>';
@@ -33,7 +33,7 @@ function vGhep(){
   if(!CLIPS.length)return '<h1>Ghép clip</h1><div class="empty">Chưa có kịch bản. Qua tab Kịch bản để nạp.</div>';
   if(!clip(S.cur))S.cur=CLIPS[0].id;
   var c=clip(S.cur),sel='<select id="pickclip" style="max-width:420px" aria-label="Chọn clip">'+CLIPS.map(function(x){return '<option value="'+esc(x.id)+'" '+(x.id===c.id?'selected':'')+'>'+esc(x.id)+' · '+esc(x.name)+'</option>'}).join('')+'</select>';
-  if(c.who.indexOf('OANH')>=0)return '<h1>Ghép clip</h1>'+sel+'<div class="empty" style="margin-top:12px">Clip này do Oanh quay trực tiếp, nằm ngoài tool ghép.</div>';
+  if(isDirect(c))return '<h1>Ghép clip</h1>'+sel+'<div class="empty" style="margin-top:12px">Clip này do '+esc(c.who)+' quay trực tiếp, nằm ngoài tool ghép.</div>';
   if(!c.auto)return '<h1>Ghép clip</h1>'+sel+'<div class="empty" style="margin-top:12px">Clip này chưa được ghép cảnh.<div class="bar" style="justify-content:center"><button class="btn pri" data-auto="'+esc(c.id)+'">Ghép cảnh tự động</button></div></div>';
   var tot=timeline(c),w=warnings(c),bad=w.filter(function(x){return x.k==='bad'}).length,miss=c.lines.some(function(l){return !l.seg});
   var h='<h1>'+esc(c.id)+' · '+esc(c.name)+'</h1><div class="bar" style="margin:0 0 6px">'+sel+pill(st(c))+'<span class="meta">'+esc(c.g)+' · tổng '+fmt1(tot)+'s</span></div>'+'<div class="rev"><div class="left">'+
@@ -121,10 +121,20 @@ function vThuvien(){
     '<select data-so="'+x.id+'" aria-label="Nguồn gốc">'+['thô','đã dựng','đã đăng'].map(function(o){return '<option '+(o===x.o?'selected':'')+'>'+o+'</option>'}).join('')+'</select>'+
     '<button class="btn sm" data-pv="'+x.id+'||" style="margin-top:4px">Xem</button> '+(x.url?'<button class="btn sm" data-act="tag" data-id="'+x.id+'" style="margin-top:4px">AI gắn tag</button> ':'')+'<button class="btn sm" data-delseg="'+x.id+'" style="margin-top:4px">Xóa</button></div>'}).join('')+'</div>':'<div class="empty">Chưa có đoạn nào. Thêm video ở khung phía trên.</div>');
 }
+function whoSelect(c){var cur=c.who||'',inL=!!person(cur),names=PEOPLE.map(function(p){return p.name});
+  return '<div><label class="lab" for="f_who">Người phụ trách</label><select id="f_who" data-ecf="who"><option value=""'+(cur?'':' selected')+'>(chưa chọn)</option>'+
+   (cur&&!inL?'<option selected value="'+esc(cur)+'">'+esc(cur)+' (chưa có trong danh sách)</option>':'')+
+   names.map(function(n){return '<option value="'+esc(n)+'"'+(inL&&person(cur).name===n?' selected':'')+'>'+esc(n)+(person(n).direct?' · quay trực tiếp':'')+'</option>'}).join('')+'</select>'+
+   (PEOPLE.length?'':'<div class="meta">Chưa có ai. Thêm ở tab Cài đặt.</div>')+'</div>'}
+function peopleSettings(){
+  return '<div class="set"><b>Người phụ trách</b><div class="meta">Cột Người trong kịch bản lấy tên từ danh sách này (không phân biệt hoa thường, có dấu hay không). Bỏ trống cột Người thì lấy người đầu tiên. Đánh dấu "Quay trực tiếp, không ghép" cho người tự quay clip trước máy: clip của họ nằm ngoài bước ghép cảnh.</div>'+
+   (PEOPLE.length?PEOPLE.map(function(p,i){return '<div class="bar" style="margin-top:0"><input type="text" data-pname="'+i+'" value="'+esc(p.name)+'" aria-label="Tên người '+(i+1)+'" style="max-width:240px"><label class="ck"><input type="checkbox" data-pdirect="'+i+'" '+(p.direct?'checked':'')+'><span>Quay trực tiếp, không ghép</span></label><button class="btn sm" data-act="pdel" data-i="'+i+'">Xóa</button></div>'}).join(''):'<div class="meta">Chưa có ai trong danh sách.</div>')+
+   '<div class="bar" style="margin-top:0"><input type="text" id="pnew" placeholder="Tên người mới" aria-label="Tên người mới" style="max-width:240px"><button class="btn" data-act="padd">Thêm</button></div></div>';
+}
 function vCaidat(){
-  return '<h1>Cài đặt</h1><p class="sub">Chỉnh chữ thông tin, thư mục lưu clip, giọng Gemini và bảng luật. Thay đổi được nhớ trong trình duyệt này.</p>'+
+  return '<h1>Cài đặt</h1><p class="sub">Chỉnh người phụ trách, chữ thông tin, thư mục lưu clip, giọng Gemini và bảng luật. Thay đổi được nhớ trong trình duyệt này.</p>'+
   gemSettings()+'<div class="set"><b>Bảng luật tự kiểm tra</b>'+RULES.map(function(r){return '<label class="ck"><input type="checkbox" data-rule="'+r.id+'" '+(r.on?'checked':'')+'><span>'+r.m+'</span></label>'}).join('')+'</div>'+
-  infoSettings()+folderSettings()+qualitySettings()+'<div class="set"><div class="meta">Chưa có: nhạc nền, logo từng gian.</div></div>';
+  peopleSettings()+infoSettings()+folderSettings()+qualitySettings()+'<div class="set"><div class="meta">Chưa có: nhạc nền, logo từng gian.</div></div>';
 }
 function infoSettings(){
   var pos=[['top','Phía trên'],['mid','Giữa'],['bottom','Phía dưới']],md=[['line','Đến hết câu thoại'],['secs','Một số giây cố định']];

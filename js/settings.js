@@ -11,3 +11,10 @@ var TR={type:'fade',dur:0.3};
 try{var tr0=JSON.parse(localStorage.getItem('xuongclip_tr')||'null');if(tr0)for(var tk in tr0)TR[tk]=tr0[tk]}catch(e){}
 function saveTR(){try{localStorage.setItem('xuongclip_tr',JSON.stringify(TR))}catch(e){}}
 function saveGem(){try{localStorage.setItem('xuongclip_gem',JSON.stringify(GEM))}catch(e){}}
+
+/* Người phụ trách: danh sách tên nhập ở Cài đặt; direct = quay trực tiếp, không ghép trong tool. */
+var PEOPLE=[];
+try{var pp0=JSON.parse(localStorage.getItem('xuongclip_people')||'null');if(Array.isArray(pp0))PEOPLE=pp0.filter(function(x){return x&&typeof x.name==='string'}).map(function(x){return {name:x.name,direct:!!x.direct}})}catch(e){}
+function savePeople(){try{localStorage.setItem('xuongclip_people',JSON.stringify(PEOPLE))}catch(e){}}
+function person(name){var n=norm(String(name||'').trim());if(!n)return null;return PEOPLE.filter(function(p){return norm(p.name.trim())===n})[0]||null}
+function isDirect(c){var p=person(c&&c.who);return !!(p&&p.direct)}

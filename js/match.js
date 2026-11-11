@@ -28,7 +28,7 @@ function warnings(c){
   return w;
 }
 function st(c){
-  if(c.exported)return 'exported';if(c.who.indexOf('OANH')>=0)return 'ngoai';
+  if(c.exported)return 'exported';if(isDirect(c))return 'ngoai';
   if(!c.auto)return 'chuaghep';if(c.lines.some(function(l){return !l.seg}))return 'missing';
   if(warnings(c).some(function(x){return x.k==='bad'}))return 'loi';return 'ready';
 }
@@ -36,4 +36,4 @@ function altSegs(c,l){
   return SEGS.map(function(s){var m=prodMatch(c.prod,s.p);return {s:s,sc:overlap(l.need,s.label)*3+overlap(l.t,s.label)+(m?2:0)+(s.o==='thô'?1:0)-(usedElsewhere(s.id,c).length?3:0)}})
     .filter(function(x){var inC=c.lines.some(function(o){return o.seg===x.s.id});return x.sc>2&&x.s.id!==l.seg&&!inC&&(prodMatch(c.prod,x.s.p)||overlap(l.need,x.s.label)>=2)}).sort(function(a,b){return b.sc-a.sc}).slice(0,2).map(function(x){return x.s});
 }
-function missingAll(){var o={};CLIPS.forEach(function(c){if(c.who.indexOf('OANH')>=0||!c.auto||c.exported)return;c.lines.forEach(function(l,i){if(!l.seg){(o[c.prod||'Chưa rõ sản phẩm']=o[c.prod||'Chưa rõ sản phẩm']||[]).push({c:c,i:i,l:l})}})});return o}
+function missingAll(){var o={};CLIPS.forEach(function(c){if(isDirect(c)||!c.auto||c.exported)return;c.lines.forEach(function(l,i){if(!l.seg){(o[c.prod||'Chưa rõ sản phẩm']=o[c.prod||'Chưa rõ sản phẩm']||[]).push({c:c,i:i,l:l})}})});return o}

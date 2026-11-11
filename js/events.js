@@ -24,7 +24,7 @@ document.addEventListener('click',function(e){
     out.forEach(function(n){var i=CLIPS.map(function(x){return x.id}).indexOf(n.id);if(i>=0)CLIPS[i]=n;else CLIPS.push(n)});
     S.paste='';S.edit=out[0].id;msg('Đã nạp '+out.length+' clip. Sửa trong bảng bên dưới nếu cần, rồi bấm Ghép cảnh tự động.');return}
   if(d.act==='newweek'){CLIPS=[];S.edit=null;S.cur=null;msg('Đã xóa danh sách tuần cũ. Thư viện source và clip đã xuất vẫn giữ nguyên.');return}
-  if(d.act==='autoall'){var n=0;CLIPS.forEach(function(x){if(x.who.indexOf('OANH')<0&&!x.exported){autoPick(x);n++}});msg('Đã ghép cảnh cho '+n+' clip. Cảnh nào chưa tìm được sẽ nằm ở tab Thiếu source.');return}
+  if(d.act==='autoall'){var n=0;CLIPS.forEach(function(x){if(!isDirect(x)&&!x.exported){autoPick(x);n++}});msg('Đã ghép cảnh cho '+n+' clip. Cảnh nào chưa tìm được sẽ nằm ở tab Thiếu source.');return}
   if(d.act==='addline'){var cd=clip(S.edit);cd.lines.push({t:'',need:'',seg:null,infos:[],choose:false});cd.auto=false;render();return}
   if(d.pv){var pa=d.pv.split('|');openPV(pa[0],pa[1],pa[2]);return}
   if(d.act==='pvclose'){closePV();return}
@@ -35,6 +35,8 @@ document.addEventListener('click',function(e){
     updPV();return}
   if(d.act==='pvuse'){applySeg(S.pv.cid,S.pv.li,S.pv.sid,S.pv.inn,S.pv.out);return}
   if(d.act==='trygem'){tryVoice(d.v);return}
+  if(d.act==='padd'){var pn=document.getElementById('pnew'),pv=pn?pn.value.trim():'';if(!pv)return;if(person(pv)){msg('"'+pv+'" đã có trong danh sách.');return}PEOPLE.push({name:pv,direct:false});savePeople();render();return}
+  if(d.act==='pdel'){var pd=PEOPLE[+d.i];if(pd&&confirm('Xóa "'+pd.name+'" khỏi danh sách người phụ trách?')){PEOPLE.splice(+d.i,1);savePeople();render()}return}
   if(d.act==='pickdir'){pickDir();return}
   if(d.act==='cleardir'){S.dir=null;S.dirPerm=null;idbSet('dir',null).catch(function(){});render();return}
   if(d.act==='gem'){makeVoice(c);return}
@@ -107,7 +109,7 @@ document.addEventListener('change',function(e){
     if(d.isz!==undefined)ix.sz=t.value===''?null:Math.max(10,Math.min(200,+t.value));
     render();return}
   if(t.id==='pickclip'){S.cur=t.value;S.t=0;S.li=0;render();return}
-  if(d.ecf){var ce=clip(S.edit);ce[d.ecf]=d.ecf==='who'?t.value.toUpperCase():t.value;if(d.ecf==='id')S.edit=t.value;render();return}
+  if(d.ecf){var ce=clip(S.edit);ce[d.ecf]=t.value;if(d.ecf==='id')S.edit=t.value;render();return}
   if(d.el){var a=d.el.split('|'),cl=clip(S.edit),ln=cl.lines[+a[0]];
     if(a[1]==='t'){ln.t=t.value;ln.dd=null}else if(a[1]==='need')ln.need=t.value;else ln.infos=parseInfos(t.value);cl.auto=false;render();return}
   if(d.th!==undefined){render();return}
@@ -117,6 +119,9 @@ document.addEventListener('change',function(e){
   if(d.src){SRC[d.src]=t.value;return}
   if(d.cap){EXP.filter(function(x){return x.id===d.cap})[0].cap=t.value;return}
   if(d.posted){EXP.filter(function(x){return x.id===d.posted})[0].posted=t.checked;return}
+  if(d.pname!==undefined){var pp=PEOPLE[+d.pname],nv=t.value.trim();if(!pp)return;if(!nv||(person(nv)&&person(nv)!==pp)){msg(nv?'"'+nv+'" đã có trong danh sách.':'Tên không được để trống.');render();return}
+    CLIPS.forEach(function(x){if(x.who&&person(x.who)===pp)x.who=nv});pp.name=nv;savePeople();render();return}
+  if(d.pdirect!==undefined){var pq=PEOPLE[+d.pdirect];if(pq){pq.direct=t.checked;savePeople()}render();return}
   if(d.rule){RULES.filter(function(r){return r.id===d.rule})[0].on=t.checked}
 });
 document.addEventListener('pointerdown',function(e){

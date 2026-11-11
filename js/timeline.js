@@ -33,7 +33,7 @@ function parse(txt){
   txt.split(/\r?\n/).forEach(function(ln){
     ln=ln.trim();if(!ln)return;
     if(ln.indexOf('##')===0){var p=ln.replace(/^##\s*/,'').split('|').map(trim);
-      cur={id:p[0]||('C'+(CLIPS.length+out.length+1)),g:p[1]||'',prod:p[2]||'',name:p[3]||'',who:(p[4]||'DIỄM').toUpperCase(),lines:[],auto:false,exported:false};out.push(cur);return}
+      cur={id:p[0]||('C'+(CLIPS.length+out.length+1)),g:p[1]||'',prod:p[2]||'',name:p[3]||'',who:p[4]?((person(p[4])||{name:p[4].trim()}).name):(PEOPLE[0]?PEOPLE[0].name:''),lines:[],auto:false,exported:false};out.push(cur);return}
     if(!cur||ln[0]==='#')return;
     var f=ln.split('|').map(trim);cur.lines.push({t:f[0]||'',need:f[1]||'',seg:null,infos:parseInfos(f[2]||''),choose:false});
   });
