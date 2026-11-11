@@ -11,8 +11,8 @@ document.addEventListener('click',function(e){
   if(d.ch!==undefined){var l=c.lines[+d.ch];l.choose=!l.choose;render();return}
   if(d.pick){var p=d.pick.split('|'),ln=c.lines[+p[0]];ln.seg=p[1]==='none'?null:p[1];ln.segIn=0;ln.segOut=null;ln.fill=null;var pbt=ln.seg?bestTag(seg(ln.seg),ln):null;if(pbt)ln.segIn=Math.max(0,pbt.t.a);ln.choose=false;render();return}
   if(d.addinfo!==undefined){c.lines[+d.addinfo].infos.push({x:'Chữ mới',ph:''});render();return}
-  if(d.useseg){var u=d.useseg.split('|'),uc=clip(u[0]);uc.lines[+u[1]].seg=u[2];uc.lines[+u[1]].segIn=0;uc.lines[+u[1]].segOut=null;msg('Đã gán cảnh '+u[2]+' cho '+u[0]+', dòng '+(+u[1]+1)+'.');return}
-  if(d.delseg){SEGS=SEGS.filter(function(x){return x.id!==d.delseg});idbDel('seg:'+d.delseg).catch(function(){});render();return}
+  if(d.useseg){var u=d.useseg.split('|'),uc=clip(u[0]);uc.lines[+u[1]].seg=u[2];uc.lines[+u[1]].segIn=0;uc.lines[+u[1]].segOut=null;msg('Đã gán cảnh "'+seg(u[2]).label+'" cho '+u[0]+', dòng '+(+u[1]+1)+'.');return}
+  if(d.delseg){segDelete(d.delseg);render();return}
   if(d.delinfo!==undefined){var di=d.delinfo.split('|');c.lines[+di[0]].infos.splice(+di[1],1);render();return}
   if(d.act==='tag'){var tsg=seg(d.id);if(tsg)tagMany([tsg]);return}
   if(d.act==='tagall'){var tl=SEGS.filter(function(x){return x.url&&!x.desc});if(!tl.length){msg('Mọi video đều đã có tag.');return}tagMany(tl);return}
@@ -35,6 +35,13 @@ document.addEventListener('click',function(e){
     updPV();return}
   if(d.act==='pvuse'){applySeg(S.pv.cid,S.pv.li,S.pv.sid,S.pv.inn,S.pv.out);return}
   if(d.act==='trygem'){tryVoice(d.v);return}
+  if(d.act==='srcpick'){srcPick();return}
+  if(d.act==='srcscan'){srcScan();return}
+  if(d.act==='srcgrant'){srcGrant();return}
+  if(d.act==='srccheck'){srcCheckRO(true);return}
+  if(d.act==='srcfresh'){srcFresh();return}
+  if(d.act==='srcrestore'){segRestore(d.id).then(function(){msg('Đã khôi phục thẻ video.')});return}
+  if(d.act==='srcrestoreall'){Promise.all(SRCF.deleted.slice().map(segRestore)).then(function(){msg('Đã khôi phục tất cả thẻ video.')});return}
   if(d.act==='padd'){var pn=document.getElementById('pnew'),pv=pn?pn.value.trim():'';if(!pv)return;if(person(pv)){msg('"'+pv+'" đã có trong danh sách.');return}PEOPLE.push({name:pv,direct:false});savePeople();render();return}
   if(d.act==='pdel'){var pd=PEOPLE[+d.i];if(pd&&confirm('Xóa "'+pd.name+'" khỏi danh sách người phụ trách?')){PEOPLE.splice(+d.i,1);savePeople();render()}return}
   if(d.act==='pickdir'){pickDir();return}
@@ -79,7 +86,6 @@ document.addEventListener('change',function(e){
   var t=e.target,d=t.dataset;
   if(t.id==='file'&&t.files[0]){var f=t.files[0];if(!/\.(txt|csv|md)$/i.test(f.name)){msg('Bản thô chưa đọc được file '+f.name+'. Hãy lưu thành .txt hoặc dán văn bản vào ô bên dưới.');return}
     var r=new FileReader();r.onload=function(){S.paste=String(r.result);msg('Đã đọc '+f.name+'. Kiểm tra nội dung trong ô rồi bấm Nạp vào danh sách.')};r.readAsText(f);return}
-  if((t.id==='vf'||t.id==='vd')&&t.files.length){addVideos(t.files);return}
   if(d.sl){seg(d.sl).label=t.value;saveSeg(seg(d.sl));return}
   if(d.sp){seg(d.sp).p=t.value.trim();saveSeg(seg(d.sp));render();return}
   if(d.gemg){GEM.byGian[d.gemg]=t.value;saveGem();render();return}
@@ -116,7 +122,6 @@ document.addEventListener('change',function(e){
   if(d.ix||d.ip){var c=clip(S.cur);if(d.ix){var x=d.ix.split('|');c.lines[+x[0]].infos[+x[1]].x=t.value}
     if(d.ip){var y=d.ip.split('|');c.lines[+y[0]].infos[+y[1]].ph=t.value}render();return}
   if(d.so){seg(d.so).o=t.value;saveSeg(seg(d.so));render();return}
-  if(d.src){SRC[d.src]=t.value;return}
   if(d.cap){EXP.filter(function(x){return x.id===d.cap})[0].cap=t.value;return}
   if(d.posted){EXP.filter(function(x){return x.id===d.posted})[0].posted=t.checked;return}
   if(d.pname!==undefined){var pp=PEOPLE[+d.pname],nv=t.value.trim();if(!pp)return;if(!nv||(person(nv)&&person(nv)!==pp)){msg(nv?'"'+nv+'" đã có trong danh sách.':'Tên không được để trống.');render();return}

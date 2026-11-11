@@ -144,3 +144,14 @@ details summary{cursor:pointer;color:var(--accent);font-weight:500;margin:6px 0}
 .empty{padding:26px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:10px}
 
 body{margin:0}[hidden]{display:none!important}
+
+/* Thư mục source */
+#srcbar{display:grid;gap:8px;margin:12px 0}
+#srcbar:empty{display:none}
+#srcbar progress{display:block;width:100%;margin-top:6px;accent-color:var(--accent)}
+.srcw .btn{margin-left:6px}
+.card .path{margin-top:4px;word-break:break-all;line-height:1.3}
+.set .path{word-break:break-all;font-size:12.5px}
+.card.gone{opacity:.7}
+.card.gone .thumb{background:var(--line)!important;color:var(--muted)}
+.lost{color:var(--bad)}

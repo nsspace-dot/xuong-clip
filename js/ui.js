@@ -51,7 +51,7 @@ function vGhep(){
      '<button class="btn sm" data-ch="'+i+'">'+(l.choose?'Đóng gợi ý':'Đổi cảnh')+'</button></div>';
     if(sg)h+=trackHTML(c,l,i,sg);
     if(l.choose){
-      var cs=SEGS.filter(function(s){return s.id!==l.seg&&prodMatch(c.prod,s.p)}).sort(function(a,b){return (overlap(l.need,segText(b))-overlap(l.need,segText(a)))||((a.o==='thô'?0:1)-(b.o==='thô'?0:1))});
+      var cs=SEGS.filter(function(s){return !s.missing&&s.id!==l.seg&&prodMatch(c.prod,s.p)}).sort(function(a,b){return (overlap(l.need,segText(b))-overlap(l.need,segText(a)))||((a.o==='thô'?0:1)-(b.o==='thô'?0:1))});
       h+='<div class="cands">'+(cs.length?cs.map(function(s){return '<div class="cand" data-pick="'+i+'|'+s.id+'"><div class="thumb" style="'+bg(s)+'"></div>'+esc(s.label)+'<br><span class="meta">'+s.o+' · '+s.d+'s'+(usedElsewhere(s.id,c).length?' · trùng':'')+'</span><br><button class="btn sm" data-pv="'+s.id+'|'+esc(c.id)+'|'+i+'" style="margin-top:3px">Xem</button></div>'}).join(''):'<span class="meta">Chưa có đoạn nào khác của sản phẩm này.</span>')+
         '<div class="cand" data-pick="'+i+'|none"><br>Bỏ chọn<br>(báo thiếu)</div></div>';
     }
@@ -94,32 +94,43 @@ function vDaxuat(){
      '<td><label><input type="checkbox" data-posted="'+x.id+'" '+(x.posted?'checked':'')+'> Đã đăng</label></td><td><button class="btn sm" data-delexp="'+x.id+'">Xóa</button></td></tr>'}).join('')+'</tbody></table></div>';
   return h;
 }
+function srcBox(){
+  var h='<div class="box"><h2>Thư mục source</h2>';
+  if(!SRCF.ok)return h+'<div class="meta">Trình duyệt này không đọc được thư mục trên máy. Hãy mở tool bằng Chrome hoặc Edge trên máy tính.</div></div>';
+  if(SRCF.h){var nv=SEGS.filter(function(x){return !x.missing}).length,nm=SEGS.length-nv,nd=SRCF.deleted.length;
+    h+='<div>Đang dùng: <b>'+esc(SRCF.name)+'</b>'+(SRCF.open?' · '+nv+' video'+(nm?' · '+nm+' thẻ mất file':'')+(nd?' · '+nd+' đã xóa (khôi phục ở tab Cài đặt)':''):'')+'</div><div class="meta" id="savest">'+esc(saveStatus())+'</div>'}
+  else h+='<div class="meta">Chưa chọn thư mục. Bấm nút bên dưới và chọn thư mục chứa video quay sẵn (có thể có thư mục con). Chrome sẽ hỏi quyền xem và sửa: quyền sửa chỉ dùng để ghi thư mục con .xuongclip, tool không bao giờ xóa, đổi tên hay di chuyển file video.</div>';
+  return h+'<div class="bar"><button class="btn pri" data-act="srcpick" '+(SRCF.scan?'disabled':'')+'>'+(SRCF.h?'Đổi thư mục source':'Chọn thư mục source')+'</button>'+(SRCF.h&&SRCF.open&&SRCF.perm==='granted'?'<button class="btn" data-act="srcscan" '+(SRCF.scan?'disabled':'')+'>Quét lại</button>':'')+'</div></div>';
+}
 function vThuvien(){
   var names={};SEGS.forEach(function(x){if(x.p)names[x.p]=1});Object.keys(HUE).forEach(function(k){names[k]=1});
   var ps=['Tất cả'].concat(Object.keys(names)),os=['Tất cả','thô','đã dựng','đã đăng'];
   var list=SEGS.filter(function(x){return (S.libP==='Tất cả'||x.p===S.libP)&&(S.libO==='Tất cả'||x.o===S.libO)});
   var used={};CLIPS.forEach(function(c){c.lines.forEach(function(l){if(l.seg)used[l.seg]=(used[l.seg]||0)+1})});
   var nov=SEGS.filter(function(x){return x.url}).length,nop=SEGS.filter(function(x){return x.url&&!x.p}).length;
-  return '<h1>Thư viện source</h1><p class="sub">Để thử, thêm vài video thật từ máy bạn. Video được lưu ngay trong trình duyệt này (cùng máy, cùng Chrome) nên tải lại trang vẫn còn. Khi nối NAS, tool tự quét thư mục thay cho bước này.</p>'+
-  '<div class="box"><h2>Thêm video để thử</h2><div class="row2"><div><label class="lab" for="vf">Chọn nhiều file video</label><input type="file" id="vf" accept="video/*" multiple></div>'+
-   '<div><label class="lab" for="vd">Hoặc chọn cả thư mục</label><input type="file" id="vd" webkitdirectory multiple></div></div>'+
-   '<div class="meta" style="margin-top:6px">Tool đoán sản phẩm từ tên file hoặc tên thư mục (ví dụ "laser_17x26.mp4"). Đoạn nào chưa có sản phẩm thì gõ vào ô bên dưới để gắn.'+(nov?' Đang có '+nov+' video thật'+(nop?', '+nop+' chưa gắn sản phẩm':'')+'.':'')+'</div>'+
+  var h='<h1>Thư viện source</h1><p class="sub">Video nằm trong một thư mục trên máy bạn. Tool đọc video thẳng từ thư mục đó, không chép vào trình duyệt. Nhãn, sản phẩm, nguồn gốc và tag được lưu trong thư mục con .xuongclip của thư mục source, nên mở bằng trình duyệt khác rồi chọn lại cùng thư mục là có lại đủ.</p>'+srcBox();
+  if(!SEGS.length)return h+'<div class="empty">'+(SRCF.h&&SRCF.open&&!SRCF.scan?'Không thấy video nào (.mp4, .mov, .m4v, .webm) trong thư mục này.':'Thư viện đang trống.')+'</div>';
+  h+='<div class="box"><h2>Gắn sản phẩm, AI gắn tag</h2>'+
+   '<div class="meta">Sản phẩm được đoán theo tên thư mục chứa video (bỏ qua thư mục tên thô / đã dựng / đã đăng), không có thư mục thì đoán từ tên file.'+(nov?' Đang có '+nov+' video đọc được'+(nop?', '+nop+' chưa gắn sản phẩm':'')+'.':'')+'</div>'+
    '<div class="row2" style="margin-top:8px"><div><label class="lab" for="bulkp">Gắn sản phẩm cho các video chưa có</label><input type="text" id="bulkp" list="plist" placeholder="Ví dụ: Lịch laser"></div><div style="align-self:end"><button class="btn" data-act="bulk">Gắn</button></div></div>'+
    '<div class="bar"><button class="btn pri" data-act="tagall">AI gắn tag cho các video chưa có</button><span class="meta" id="tagst">Cần API key và model đọc video ở tab Cài đặt. Mỗi video gửi vài khung hình nhỏ lên Google để AI mô tả và chia đoạn.</span></div>'+
-   '<datalist id="plist">'+Object.keys(names).map(function(k){return '<option value="'+esc(k)+'">'}).join('')+'</datalist></div>'+
-  '<div class="box"><h2>Nguồn sau này (NAS)</h2><div class="row2"><div><label class="lab" for="sk">Loại</label><select id="sk" data-src="kind">'+['NAS Synology','Google Drive'].map(function(k){return '<option '+(SRC.kind===k?'selected':'')+'>'+k+'</option>'}).join('')+'</select></div>'+
-   '<div><label class="lab" for="sp">Thư mục gốc</label><input type="text" id="sp" data-src="path" value="'+esc(SRC.path)+'"></div>'+
-   '<div><label class="lab" for="si">Chỉ lấy thư mục có tên chứa</label><input type="text" id="si" data-src="inc" value="'+esc(SRC.inc)+'"></div>'+
-   '<div><label class="lab" for="se">Bỏ qua thư mục có tên chứa</label><input type="text" id="se" data-src="exc" value="'+esc(SRC.exc)+'"></div></div>'+
-   '<div class="bar"><button class="btn" disabled>Quét thư mục (chưa nối)</button></div></div>'+
-  '<div class="chips">'+ps.map(function(p){return '<button class="chip '+(S.libP===p?'on':'')+'" data-lp="'+esc(p)+'">'+esc(p)+'</button>'}).join('')+'</div>'+
+   '<datalist id="plist">'+Object.keys(names).map(function(k){return '<option value="'+esc(k)+'">'}).join('')+'</datalist></div>';
+  return h+'<div class="chips">'+ps.map(function(p){return '<button class="chip '+(S.libP===p?'on':'')+'" data-lp="'+esc(p)+'">'+esc(p)+'</button>'}).join('')+'</div>'+
   '<div class="chips">'+os.map(function(p){return '<button class="chip '+(S.libO===p?'on':'')+'" data-lo="'+p+'">'+(p==='Tất cả'?'Mọi nguồn gốc':p)+'</button>'}).join('')+'</div>'+
-  (list.length?'<div class="grid">'+list.map(function(x){return '<div class="card"><div class="thumb" style="'+bg(x)+'display:flex;align-items:flex-end;justify-content:center">'+(x.thumb?'':esc(x.p||'Chưa gắn SP'))+'</div>'+
+  (list.length?'<div class="grid">'+list.map(function(x){return '<div class="card'+(x.missing?' gone':'')+'"><div class="thumb" data-th="'+x.id+'" style="'+bg(x)+'display:flex;align-items:flex-end;justify-content:center">'+(x.missing?'MẤT FILE':(x.thumb?'':esc(x.p||'Chưa gắn SP')))+'</div>'+
+    '<div class="meta path" title="'+esc(x.path)+'">'+esc(x.path)+'</div>'+
     '<input type="text" data-sl="'+x.id+'" value="'+esc(x.label)+'" aria-label="Nhãn">'+
     '<input type="text" list="plist" data-sp="'+x.id+'" value="'+esc(x.p)+'" placeholder="Sản phẩm" aria-label="Sản phẩm">'+
-    '<div class="meta">'+x.id+' · '+x.d+'s · dùng '+(used[x.id]||0)+' lần'+(x.url?' · video thật':' · mẫu')+'</div>'+(x.desc?'<div class="meta" style="margin-top:3px"><b>AI:</b> '+esc(x.desc)+(x.tags||[]).map(function(t){return '<br>'+t.a.toFixed(0)+'–'+t.b.toFixed(0)+'s: '+esc(t.d)}).join('')+'</div>':'')+
+    '<div class="meta">'+sid(x.id)+' · '+(x.dx?fmt1(x.dx):'?')+'s · dùng '+(used[x.id]||0)+' lần'+(x.missing?' · <b class="lost">mất file</b>':x.bad?' · <b class="lost">không phát được</b>':'')+'</div>'+(x.desc?'<div class="meta" style="margin-top:3px"><b>AI:</b> '+esc(x.desc)+(x.tags||[]).map(function(t){return '<br>'+t.a.toFixed(0)+'–'+t.b.toFixed(0)+'s: '+esc(t.d)}).join('')+'</div>':'')+
     '<select data-so="'+x.id+'" aria-label="Nguồn gốc">'+['thô','đã dựng','đã đăng'].map(function(o){return '<option '+(o===x.o?'selected':'')+'>'+o+'</option>'}).join('')+'</select>'+
-    '<button class="btn sm" data-pv="'+x.id+'||" style="margin-top:4px">Xem</button> '+(x.url?'<button class="btn sm" data-act="tag" data-id="'+x.id+'" style="margin-top:4px">AI gắn tag</button> ':'')+'<button class="btn sm" data-delseg="'+x.id+'" style="margin-top:4px">Xóa</button></div>'}).join('')+'</div>':'<div class="empty">Chưa có đoạn nào. Thêm video ở khung phía trên.</div>');
+    (x.url?'<button class="btn sm" data-pv="'+x.id+'||" style="margin-top:4px">Xem</button> <button class="btn sm" data-act="tag" data-id="'+x.id+'" style="margin-top:4px">AI gắn tag</button> ':'')+'<button class="btn sm" data-delseg="'+x.id+'" style="margin-top:4px" title="Chỉ ẩn thẻ khỏi thư viện, không xóa file video">Xóa</button></div>'}).join('')+'</div>':'<div class="empty">Không có video nào khớp bộ lọc.</div>');
+}
+function deletedSettings(){
+  var ids=SRCF.deleted;
+  return '<div class="set"><b>Video đã xóa khỏi thư viện</b><div class="meta">Nút Xóa ở thư viện chỉ ẩn thẻ, file video vẫn nằm nguyên trong thư mục source. Bấm Khôi phục để hiện lại thẻ cùng nhãn cũ.</div>'+
+   (!SRCF.h?'<div class="meta">Chưa chọn thư mục source.</div>':!ids.length?'<div class="meta">Chưa xóa video nào.</div>':
+    ids.map(function(id){var r=LIB[id];return '<div class="bar" style="margin-top:0"><span class="path">'+esc(r?r.path:'(id '+sid(id)+')')+'</span>'+(r&&r.missing?'<span class="meta">mất file</span>':'')+'<button class="btn sm" data-act="srcrestore" data-id="'+esc(id)+'">Khôi phục</button></div>'}).join('')+
+    (ids.length>1?'<div class="bar" style="margin-top:0"><button class="btn sm" data-act="srcrestoreall">Khôi phục tất cả</button></div>':''))+'</div>';
 }
 function whoSelect(c){var cur=c.who||'',inL=!!person(cur),names=PEOPLE.map(function(p){return p.name});
   return '<div><label class="lab" for="f_who">Người phụ trách</label><select id="f_who" data-ecf="who"><option value=""'+(cur?'':' selected')+'>(chưa chọn)</option>'+
@@ -134,7 +145,7 @@ function peopleSettings(){
 function vCaidat(){
   return '<h1>Cài đặt</h1><p class="sub">Chỉnh người phụ trách, chữ thông tin, thư mục lưu clip, giọng Gemini và bảng luật. Thay đổi được nhớ trong trình duyệt này.</p>'+
   gemSettings()+'<div class="set"><b>Bảng luật tự kiểm tra</b>'+RULES.map(function(r){return '<label class="ck"><input type="checkbox" data-rule="'+r.id+'" '+(r.on?'checked':'')+'><span>'+r.m+'</span></label>'}).join('')+'</div>'+
-  peopleSettings()+infoSettings()+folderSettings()+qualitySettings()+'<div class="set"><div class="meta">Chưa có: nhạc nền, logo từng gian.</div></div>';
+  peopleSettings()+infoSettings()+folderSettings()+deletedSettings()+qualitySettings()+'<div class="set"><div class="meta">Chưa có: nhạc nền, logo từng gian.</div></div>';
 }
 function infoSettings(){
   var pos=[['top','Phía trên'],['mid','Giữa'],['bottom','Phía dưới']],md=[['line','Đến hết câu thoại'],['secs','Một số giây cố định']];
@@ -177,7 +188,7 @@ function drawPhone(){
       var held=(l.fill==='hold'||l.fill==='slow')&&span<needS&&pv.currentTime>=a0+span-0.05;
       if(S.play&&!held){var pr=pv.play();if(pr&&pr.catch)pr.catch(function(){})}else pv.pause()}
     else{try{pv.pause()}catch(x){}pv.dataset.k=''}}
-  sc.innerHTML=useV?'':(sg?'<div class="scene" style="'+bg(sg)+'">'+(sg.thumb?'':esc(sg.label))+'<small>'+(sg.url?'video không phát được trong khung này':'cảnh mẫu')+' · '+sg.o+'</small></div>':'<div class="scene miss">THIẾU CẢNH<small>'+esc(l.need)+'</small></div>');
+  sc.innerHTML=useV?'':(sg?'<div class="scene" style="'+bg(sg)+'">'+(sg.thumb?'':esc(sg.label))+'<small>'+(sg.url?'video không phát được trong khung này':'mất file')+' · '+sg.o+'</small></div>':'<div class="scene miss">THIẾU CẢNH<small>'+esc(l.need)+'</small></div>');
   var edit=!S.play&&S.edTxt!==false;
   var shown=l.infos.map(function(x,k){return {x:x,k:k}}).filter(function(o){var x=o.x;if(!infoOk(x))return false;if(edit)return true;
     if(S.play&&S.mode==='tts'&&S.bp[li]!==undefined&&(x.off==null||x.off==='')){var i=l.t.toLowerCase().indexOf(x.ph.toLowerCase());return x.ph&&i>=0&&S.bp[li]>=i}
@@ -219,6 +230,7 @@ function render(){
   var banner=S.msg?'<div class="w ok" style="margin-top:12px">'+esc(S.msg)+'</div>':'';S.msg='';
   m.innerHTML=banner+{kichban:vKichban,ghep:vGhep,thieu:vThieu,daxuat:vDaxuat,thuvien:vThuvien,caidat:vCaidat}[S.tab]();
   if(S.tab==='ghep'){drawPhone();afterGhep()}
+  renderSrcBar();if(S.tab==='thuvien')observeThumbs();
 }
 function afterGhep(){var c=clip(S.cur);if(!c||!c.lines||!c.lines.length)return;drawWave(c);
   c.lines.forEach(function(l){var sg=l.seg?seg(l.seg):null;if(sg)ensureStrip(sg)});

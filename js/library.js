@@ -1,16 +1,8 @@
-/* Thư viện source: thêm video, lưu IndexedDB, AI gắn tag, xem và chọn đoạn. */
-var vn=0;
-/* ---------- lưu thư viện + AI gắn tag ---------- */
-function segRec(o){var r={};for(var k in o)if(k!=='url'&&k!=='bad'&&k!=='stripBusy')r[k]=o[k];return r}
-function saveSeg(o){if(!o||!o.file)return;idbSet('seg:'+o.id,segRec(o)).catch(function(){})}
-function idbDel(k){return idbOpen().then(function(db){return new Promise(function(res,rej){var tx=db.transaction('kv','readwrite');tx.objectStore('kv').delete(k);tx.oncomplete=res;tx.onerror=function(){rej(tx.error)}})})}
-function idbAllSegs(){return idbOpen().then(function(db){return new Promise(function(res,rej){var rq=db.transaction('kv','readonly').objectStore('kv').openCursor(),out=[];rq.onsuccess=function(){var cu=rq.result;if(cu){if(String(cu.key).indexOf('seg:')===0)out.push(cu.value);cu.continue()}else res(out)};rq.onerror=function(){rej(rq.error)}})})}
-function loadSegs(){try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
-  idbAllSegs().then(function(arr){var n=0;arr.forEach(function(r){if(!r||!r.file||SEGS.some(function(x){return x.id===r.id}))return;r.url=URL.createObjectURL(r.file);SEGS.push(r);var m=/^v(\d+)$/.exec(r.id);if(m)vn=Math.max(vn,+m[1]);n++});
-    if(n)msg('Đã nạp lại '+n+' video đã lưu trong thư viện.')}).catch(function(){})}
+/* Thư viện source: AI gắn tag, thanh chọn đoạn, xem và cắt đoạn. IndexedDB chỉ giữ handle thư mục, không giữ video. */
+/* ---------- AI gắn tag ---------- */
 function tagSeg(sg){
   if(!GEM.key)return Promise.reject(new Error('Chưa có API key, vào tab Cài đặt để dán key'));
-  if(!sg.url)return Promise.reject(new Error('Đoạn mẫu không có video'));
+  if(!sg.url)return Promise.reject(new Error('Không đọc được file video (mất file hoặc chưa cấp quyền thư mục)'));
   var d=sdur(sg),N=Math.max(4,Math.min(16,Math.ceil(d/2))),parts=[];
   return loadVid(sg.url).then(async function(v){if(!v||!v.videoWidth)throw new Error('Trình duyệt không đọc được video này');
     var w=320,h=Math.round(w*v.videoHeight/v.videoWidth),cv=newCanvas(w,h),cx=cv.getContext('2d');
@@ -51,10 +43,10 @@ function ensureStrip(sg){if(!sg||!sg.url||sg.strip||sg.stripBusy||sg.bad)return;
   loadVid(sg.url).then(async function(v){if(!v||!v.videoWidth){return}
     var cv=newCanvas(64*N,38),cx=cv.getContext('2d');
     for(var i=0;i<N;i++){await seekVid(v,Math.min(d-0.05,(i+0.5)*d/N));var k=Math.max(64/v.videoWidth,38/v.videoHeight),dw=v.videoWidth*k,dh=v.videoHeight*k;cx.drawImage(v,i*64+(64-dw)/2,(38-dh)/2,dw,dh)}
-    sg.strip=cv.toDataURL('image/jpeg',0.6);saveSeg(sg);
+    sg.strip=cv.toDataURL('image/jpeg',0.6);
     document.querySelectorAll('.trk').forEach(function(e){if(e.dataset.trk.split('|')[1]===sg.id)e.style.backgroundImage='url('+sg.strip+')'})
   }).catch(function(){}).then(function(){sg.stripBusy=0})}
-function applySeg(cid,li,sid,inn,out){var c=clip(cid);if(!c)return;var l=c.lines[li];l.seg=sid;l.segIn=inn||0;l.segOut=out||null;l.choose=false;closePV();msg('Đã chọn đoạn '+sid+(inn||out?' (giây '+(inn||0)+' đến '+(out||seg(sid).d)+')':'')+' cho '+cid+', dòng '+(li+1)+'.')}
+function applySeg(cid,li,sid,inn,out){var c=clip(cid);if(!c)return;var l=c.lines[li];l.seg=sid;l.segIn=inn||0;l.segOut=out||null;l.choose=false;closePV();msg('Đã chọn đoạn "'+seg(sid).label+'"'+(inn||out?' (giây '+(inn||0)+' đến '+(out||seg(sid).d)+')':'')+' cho '+cid+', dòng '+(li+1)+'.')}
 function closePV(){var el=document.getElementById('pvm');if(el){var v=document.getElementById('pvv');if(v)try{v.pause()}catch(e){}el.remove()}S.pv=null}
 function updPV(){var e=document.getElementById('pvt');if(e&&S.pv)e.textContent='Đầu: '+(S.pv.inn||0)+'s · Cuối: '+(S.pv.out||'hết video')+(S.pv.out?'s':'')}
 function openPV(sid,cid,li){
@@ -63,7 +55,7 @@ function openPV(sid,cid,li){
   S.pv={sid:sid,cid:c?c.id:'',li:ln?+li:-1,inn:(ln&&ln.seg===sid&&ln.segIn)||0,out:(ln&&ln.seg===sid&&ln.segOut)||null};
   var el=document.createElement('div');el.id='pvm';el.style.cssText='position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:16px';
   el.innerHTML='<div style="background:var(--surface);color:var(--fg);border-radius:12px;padding:14px;max-width:400px;width:100%;max-height:96vh;overflow:auto"><div style="font-weight:600;margin-bottom:6px">'+esc(sg.label)+'</div>'+
-   (sg.url?'<video id="pvv" src="'+sg.url+'" controls muted playsinline style="width:100%;max-height:58vh;background:#000;border-radius:8px"></video>':'<div class="empty">Đây là đoạn mẫu, không có video để xem.</div>')+
+   (sg.url?'<video id="pvv" src="'+sg.url+'" controls muted playsinline style="width:100%;max-height:58vh;background:#000;border-radius:8px"></video>':'<div class="empty">Không đọc được file video này (mất file hoặc chưa cấp quyền thư mục).</div>')+
    '<div class="meta" id="pvt" style="margin:6px 0"></div>'+
    (sg.url?'<div class="bar" style="margin:0 0 6px"><button class="btn sm" data-act="pvin">Đặt điểm đầu tại đây</button><button class="btn sm" data-act="pvout">Đặt điểm cuối tại đây</button><button class="btn sm" data-act="pvclear">Xóa mốc</button></div>':'')+
    '<div class="bar">'+(S.pv.cid?'<button class="btn pri" data-act="pvuse">Dùng đoạn này</button>':'')+'<button class="btn" data-act="pvclose">Đóng</button></div></div>';
@@ -73,21 +65,3 @@ function openPV(sid,cid,li){
   updPV();
 }
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closePV()});
-function guessProd(name){var best='',bs=0,all={};SEGS.forEach(function(x){if(x.p)all[x.p]=1});Object.keys(HUE).forEach(function(k){all[k]=1});
-  Object.keys(all).forEach(function(k){var weak=['lich','tranh','bang','treo'],n=toks(k).filter(function(w){return weak.indexOf(w)<0&&toks(name).indexOf(w)>=0}).length;if(n>bs){bs=n;best=k}});return best}
-function addVideos(files){
-  var arr=Array.prototype.slice.call(files).filter(function(f){return /^video\//.test(f.type)||/\.(mp4|mov|m4v|webm)$/i.test(f.name)});
-  if(!arr.length){msg('Không thấy file video nào (mp4, mov, webm).');return}
-  var left=arr.length;
-  arr.forEach(function(f){
-    var path=f.webkitRelativePath||f.name,url=URL.createObjectURL(f),v=document.createElement('video');
-    var o={id:'v'+(++vn),file:f,p:guessProd(path),label:path.replace(/\.[^.]+$/,'').replace(/[_]+/g,' '),o:/(^|[\/_ ])(ai)([\/_. ]|$)/i.test(path)?'đã dựng':'thô',d:5,url:url,thumb:''};
-    SEGS.push(o);
-    var done=function(){saveSeg(o);if(--left===0)msg('Đã thêm '+arr.length+' video vào thư viện (đã lưu trong trình duyệt).')};
-    v.preload='metadata';v.muted=true;v.playsInline=true;
-    v.onloadedmetadata=function(){o.dx=v.duration||5;o.d=Math.max(1,Math.round(v.duration||5));try{v.currentTime=Math.min(1,(v.duration||2)/2)}catch(x){done()}};
-    v.onseeked=function(){try{var cv=document.createElement('canvas');cv.width=180;cv.height=Math.round(180*(v.videoHeight||16)/(v.videoWidth||9));cv.getContext('2d').drawImage(v,0,0,cv.width,cv.height);o.thumb=cv.toDataURL('image/jpeg',0.6)}catch(x){}v.onseeked=null;done()};
-    v.onerror=function(){o.bad=true;done()};
-    v.src=url;
-  });
-}

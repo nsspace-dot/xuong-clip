@@ -1,7 +1,7 @@
 /* Trạng thái chung và hằng số. Thư viện source và danh sách clip bắt đầu trống. */
 var HUE={'Lịch laser':12,'Bảng treo chìa khóa':205,'Tranh Khổng Tử':38,'Bloc lịch':150,'Đầu treo laminate':280};
 var SEGS=[];
-var CLIPS=[], EXP=[], SRC={kind:'NAS Synology',path:'',inc:'',exc:''};
+var CLIPS=[], EXP=[];
 var RULES=[
  {id:'gia',on:true,m:'Có nêu giá',re:/\d[\d.,]*\s?(k|đ|đồng|nghìn|ngàn|triệu|vnđ)(?![\p{L}])|(^|[^\p{L}])giá([^\p{L}]|$)/iu},
  {id:'bc',on:true,m:'Có chữ "bán chạy"',re:/bán chạy/iu},
