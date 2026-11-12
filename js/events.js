@@ -4,7 +4,7 @@ document.addEventListener('click',function(e){
   var d=el.dataset,c=clip(S.cur);
   if(d.cur){S.cur=d.cur;S.t=0;S.li=0;return}
   if(d.edit){S.edit=d.edit;render();return}
-  if(d.delclip){CLIPS=CLIPS.filter(function(x){return x.id!==d.delclip});if(S.edit===d.delclip)S.edit=null;render();return}
+  if(d.delclip){clipDelete(d.delclip);render();return}
   if(d.dl!==undefined){var ce=clip(S.edit);ce.lines.splice(+d.dl,1);ce.auto=false;render();return}
   if(d.auto){var cc=clip(d.auto);autoPick(cc);S.cur=cc.id;var nk=cc.lines.filter(function(l){return l.lock}).length;msg('Đã ghép cảnh cho '+cc.id+': '+cc.lines.filter(function(l){return l.seg}).length+'/'+cc.lines.length+' dòng có cảnh'+(nk?' ('+nk+' dòng chọn tay giữ nguyên)':'')+'. Dòng không có cảnh đủ điểm để trống, xem tab Thiếu source.');return}
   if(d.eg){S.expG=d.eg;render();return}
@@ -17,11 +17,7 @@ document.addEventListener('click',function(e){
   if(d.act==='tag'){var tsg=seg(d.id);if(tsg)tagMany([tsg]);return}
   if(d.act==='covexp'){exportCover(c);return}
   if(d.delexp){EXP=EXP.filter(function(x){return x.id!==d.delexp});render();return}
-  if(d.act==='load'){var ta=document.getElementById('paste');S.paste=ta.value;var out=parse(S.paste);
-    if(!out.length){msg('Không đọc được clip nào. Mỗi clip cần một dòng bắt đầu bằng ##, xem mục Định dạng văn bản.');return}
-    out.forEach(function(n){var i=CLIPS.map(function(x){return x.id}).indexOf(n.id);if(i>=0)CLIPS[i]=n;else CLIPS.push(n)});
-    S.paste='';S.edit=out[0].id;msg('Đã nạp '+out.length+' clip. Sửa trong bảng bên dưới nếu cần, rồi bấm Ghép cảnh tự động.');return}
-  if(d.act==='newweek'){CLIPS=[];S.edit=null;S.cur=null;msg('Đã xóa danh sách tuần cũ. Thư viện source và clip đã xuất vẫn giữ nguyên.');return}
+  if(d.act==='load'){kbLoad();return}
   if(d.act==='autoall'){var n=0;CLIPS.forEach(function(x){if(!isDirect(x)&&!x.exported){autoPick(x);n++}});msg('Đã ghép cảnh cho '+n+' clip. Cảnh nào chưa tìm được sẽ nằm ở tab Thiếu source.');return}
   if(d.act==='addline'){var cd=clip(S.edit);cd.lines.push({t:'',need:'',seg:null,infos:[],choose:false});cd.auto=false;render();return}
   if(d.pv){var pa=d.pv.split('|');openPV(pa[0],pa[1],pa[2]);return}
@@ -90,7 +86,7 @@ document.addEventListener('change',function(e){
   if(d.q){EXPQ[d.q]=t.value;saveQ();return}
   if(d.info){INFO[d.info]=t.type==='number'?(+t.value||INFO[d.info]):t.value;saveInfo();render();return}
   if(d.gem){GEM[d.gem]=t.value;saveGem();return}
-  if(t.id==='audf'){var ac=clip(S.cur),af=t.files[0]||null;ac.audioFile=af;ac.audioUrl=af?URL.createObjectURL(af):null;ac.audioDur=null;if(af){var tb=new Audio(ac.audioUrl);tb.onloadedmetadata=function(){ac.audioDur=tb.duration;ac.bounds=null;alignToSpeech(ac,function(){render()})}}render();return}
+  if(t.id==='audf'){var ac=clip(S.cur),af=t.files[0]||null;if(!af)return;setClipAudio(ac,af,{src:'tải lên',name:af.name});ac.audioDur=null;var tb=new Audio(ac.audioUrl);tb.onloadedmetadata=function(){ac.audioDur=tb.duration;ac.bounds=null;alignToSpeech(ac,function(){touchClips();render()})};render();return}
   if(t.id==='tts'){S.tts=t.checked;return}
   if(t.id==='edtxt'){S.edTxt=t.checked;drawPhone();return}
   if(t.id==='trtype'){TR.type=t.value;saveTR();return}
@@ -113,7 +109,7 @@ document.addEventListener('change',function(e){
     if(d.isz!==undefined)ix.sz=t.value===''?null:Math.max(10,Math.min(200,+t.value));
     render();return}
   if(t.id==='pickclip'){S.cur=t.value;S.t=0;S.li=0;render();return}
-  if(d.ecf){var ce=clip(S.edit);ce[d.ecf]=t.value;if(d.ecf==='id')S.edit=t.value;render();return}
+  if(d.ecf){var ce=clip(S.edit),nv=d.ecf==='who'||d.ecf==='batch'?t.value.trim():t.value;if(d.ecf==='id'){nv=nv.trim();if(!nv||(nv!==ce.id&&clipById(nv))){msg(nv?'Mã "'+nv+'" đã có, chọn mã khác.':'Mã clip không được để trống.');return}if(S.cur===ce.id)S.cur=nv;S.edit=nv}ce[d.ecf]=nv;render();return}
   if(d.el){var a=d.el.split('|'),cl=clip(S.edit),ln=cl.lines[+a[0]];
     if(a[1]==='t'){ln.t=t.value;ln.dd=null}else if(a[1]==='need')ln.need=t.value;else ln.infos=parseInfos(t.value);cl.auto=false;render();return}
   if(d.th!==undefined){render();return}

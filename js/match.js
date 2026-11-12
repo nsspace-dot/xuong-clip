@@ -52,6 +52,8 @@ function scoreWin(c,i,s,win){
 function suggest(c,i,opt){opt=opt||{};timeline(c);var out=[];
   SEGS.forEach(function(s){if(!segEligible(c,s))return;var best=null;
     windowsOf(s).forEach(function(win){var r=scoreWin(c,i,s,win);if(r&&(!best||r.sc>best.sc))best=r});
+    if(!best&&opt.all){var w0={a:0,b:Math.min(sdur(s),needLen(c.lines[i]))},ov=overlapsAt(s.id,w0,c,i); // chỉ để tự chọn tay, không bao giờ đủ điểm
+      best={s:s,a:0,sc:0,dup:ov.length>0,why:['cùng sản phẩm','không khớp chữ nào với cảnh cần'].concat(ov.length?['TRÙNG đoạn đang dùng ở '+ov.map(useText).join(', ')]:[])}}
     if(best)out.push(best)});
   out.sort(function(a,b){return b.sc-a.sc});
   return opt.all?out:out.filter(function(r){return r.sc>=SG.min&&!r.dup})} // đoạn trùng không bao giờ là gợi ý đủ điểm
@@ -77,6 +79,7 @@ function warnings(c){
     l.infos.forEach(function(x){if(cue(l,x)===null)w.push({k:'warn',m:'Dòng '+(i+1)+': cụm "'+x.ph+'" không có trong lời thoại nên chữ "'+x.x+'" sẽ không hiện'})});
     if(l.dm>0&&l.ae!=null&&l.dm<(l.ae-l.as)-0.05)w.push({k:'cut',m:'Dòng '+(i+1)+': voice dài '+fmt1(l.ae-l.as)+'s, bạn nhập '+fmt1(l.dm)+'s, sẽ bị cắt '+fmt1(l.ae-l.as-l.dm)+'s'});
     if(!l.seg)w.push({k:'warn',m:'Dòng '+(i+1)+': chưa có cảnh, xem tab Thiếu source'});
+    else if(lineLost(l))w.push({k:'warn',m:'Dòng '+(i+1)+': mất cảnh ('+lostWhy(l)+'), chọn lại cảnh khác'});
     else{var u=dupsOf(c,i);if(u.length)w.push({k:'warn',m:'Dòng '+(i+1)+': đoạn này cũng dùng ở '+u.map(useText).join('; ')});
       if((seg(l.seg)||{}).o==='đã đăng')w.push({k:'warn',m:'Dòng '+(i+1)+': đoạn lấy từ clip đã đăng, dễ bị coi là nội dung lặp'})}
   });
@@ -84,12 +87,12 @@ function warnings(c){
 }
 function st(c){
   if(c.exported)return 'exported';if(isDirect(c))return 'ngoai';
-  if(!c.auto)return 'chuaghep';if(c.lines.some(function(l){return !l.seg}))return 'missing';
+  if(!c.auto)return 'chuaghep';if(c.lines.some(function(l){return !lineSeg(l)}))return 'missing';
   if(warnings(c).some(function(x){return x.k==='bad'}))return 'loi';return 'ready';
 }
 /* Cảnh thiếu, gom theo sản phẩm (tên chuẩn). */
 function missingAll(){var o={};CLIPS.forEach(function(c){if(isDirect(c)||!c.auto||c.exported)return;var k=canonicalProduct(c.prod)||'Chưa rõ sản phẩm';
-  c.lines.forEach(function(l,i){if(!l.seg)(o[k]=o[k]||[]).push({c:c,i:i,l:l})})});return o}
+  c.lines.forEach(function(l,i){if(!lineSeg(l))(o[k]=o[k]||[]).push({c:c,i:i,l:l})})});return o}
 
 /* ---------- sự kiện: tới chỗ trùng, mở khóa dòng ---------- */
 function gotoLine(cid,i){var c=clip(cid);if(!c)return;timeline(c);S.cur=cid;S.li=Math.min(i,c.lines.length-1);S.t=c.lines[S.li].s;
