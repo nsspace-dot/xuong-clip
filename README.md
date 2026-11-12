@@ -14,7 +14,7 @@ js/
   settings.js       Lưu cài đặt nhỏ trong localStorage (Gemini, chất lượng, chữ thông tin, chuyển cảnh, người phụ trách)
   utils.js          Tiện ích dùng chung (escape, chuẩn hóa chữ, màu, msg...)
   timeline.js       Đọc kịch bản, tính dòng thời gian, chữ thông tin, chuyển cảnh
-  match.js          Ghép cảnh tự động, kiểm tra luật, trạng thái clip
+  match.js          Gợi ý cảnh (chấm điểm, lý do, ngưỡng), ghép tự động, trùng cảnh, kiểm tra luật
   library.js        AI gắn tag, thanh chọn đoạn, xem/cắt đoạn; IndexedDB chỉ giữ handle thư mục
   catalog.js        Danh mục sản phẩm, tên tương đương, canonicalProduct(), quy tắc gắn nhãn, gợi ý gộp
   source.js         Thư mục source: chọn thư mục, quét video, state.json, khóa, hình thu nhỏ
@@ -52,6 +52,14 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
 - Nút Xóa chỉ ẩn thẻ; khôi phục ở tab Cài đặt.
 - API key Gemini, tên model, người phụ trách lưu trong localStorage của trình duyệt, **không** ghi vào `state.json`.
 - Kịch bản và clip đang ghép chưa được lưu: tải lại trang sẽ mất.
+
+## Gợi ý cảnh
+
+- Chỉ gợi ý video **cùng sản phẩm** với clip (so bằng `canonicalProduct()`, tên tương đương tính là một). Sản phẩm rỗng không bao giờ khớp.
+- Video chưa gắn nhãn không bao giờ được gợi ý; video nhãn "đoán" chỉ khi bật ở Cài đặt.
+- Điểm (tối đa 95): khớp "cảnh cần" với đoạn tag AI / mô tả AI / tên video (60), đủ dài (15), chưa dùng (15), video thô (5); video đã đăng trừ 10, trùng đoạn trừ 30.
+- Dưới ngưỡng (mặc định 40, đổi ở Cài đặt) hoặc trùng đoạn thì không phải gợi ý; cảnh đó vào tab Thiếu source là "cần quay thêm".
+- Trùng cảnh = cùng video, cùng gian, khoảng thời gian chồng nhau. Dòng đã chọn cảnh tay bị khóa, Ghép lại tự động không đổi.
 
 ## Mở thử
 
