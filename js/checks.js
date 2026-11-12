@@ -10,7 +10,7 @@ var CHK_FORMS=[['total','Tổng thời lượng clip','err'],['linedur','Thời 
 function chkCfgDefault(){var on={};CHK_FORMS.forEach(function(f){on[f[0]]=true});
   return {fold:false,minTotal:45,maxTotal:60,minLine:6,maxLine:9,cta:'giỏ hàng',safe:{t:8,b:22,r:14,l:4},on:on}}
 var CHK=chkCfgDefault();
-function chkId(){return 'r'+Math.random().toString(36).slice(2,9)}
+function chkId(){return 'r'+Math.floor(Math.random()*0xfffffff).toString(16)}
 function chkRulesDefault(){
   var R=function(text,lvl,note,pat){return {id:chkId(),text:text,pat:!!pat,lvl:lvl,scope:'all',sv:'',on:true,note:note||''}};
   return [
@@ -44,6 +44,7 @@ var REC={};
 function ruleRe(r){var k=r.text+'\u0001'+r.pat+'\u0001'+CHK.fold;if(k in REC)return REC[k];var src;
   if(r.pat)src=CHK.fold?foldText(r.text):r.text;else src=foldText(r.text.trim()).replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\s+/g,'\\s+');
   try{REC[k]=new RegExp('(?<![\\p{L}\\p{N}])(?:'+src+')(?![\\p{L}\\p{N}])','giu')}catch(e){REC[k]=null}return REC[k]}
+function ruleName(r){return r.pat?(r.note||'Mẫu cấm'):'Từ cấm "'+r.text+'"'}
 function ruleBad(r){return !!r.pat&&!ruleRe(r)}
 function ruleApplies(r,c){if(!r.on)return false;if(r.scope==='gian')return pkey(r.sv)===pkey(c&&c.g);
   if(r.scope==='prod')return !!r.sv&&prodMatch(r.sv,c&&c.prod);return true}
@@ -85,9 +86,9 @@ function checkClip(c){
     if(on.linedur&&(ld<CHK.minLine-0.05||ld>CHK.maxLine+0.05))add('warn',i,'linedur','Dòng dài '+fmt1(ld)+'s, nên '+CHK.minLine+'–'+CHK.maxLine+'s');
     if(on.digits){var dg=(l.t.match(/\d+(?:[.,x×]\d+)*/g)||[]).filter(function(v,k,a){return a.indexOf(v)===k});
       if(dg.length)add('warn',i,'digits','Lời đọc có chữ số: '+dg.map(function(v){return '"'+v+'"'}).join(', ')+'. Nên viết thành chữ để giọng đọc đúng',dg.join(','))}
-    findHits(l.t,c).forEach(function(h){add(h.r.lvl,i,'word','Từ cấm "'+h.r.text+'" trong lời: "'+h.m+'"'+(h.r.note?' ('+h.r.note+')':''),h.r.id+':lời:'+h.m)});
+    findHits(l.t,c).forEach(function(h){add(h.r.lvl,i,'word',ruleName(h.r)+' trong lời: "'+h.m+'"'+(h.r.note&&!h.r.pat?' ('+h.r.note+')':''),h.r.id+':lời:'+h.m)});
     l.infos.forEach(function(x){if(!infoOk(x))return;
-      findHits(x.x,c).forEach(function(h){add(h.r.lvl,i,'word','Từ cấm "'+h.r.text+'" trong chữ hiện: "'+h.m+'"'+(h.r.note?' ('+h.r.note+')':''),h.r.id+':chữ:'+h.m)});
+      findHits(x.x,c).forEach(function(h){add(h.r.lvl,i,'word',ruleName(h.r)+' trong chữ hiện: "'+h.m+'"'+(h.r.note&&!h.r.pat?' ('+h.r.note+')':''),h.r.id+':chữ:'+h.m)});
       var ph=(x.ph||x.x||'').trim();if(on.infomis&&ph&&l.t.toLowerCase().indexOf(ph.toLowerCase())<0)add('err',i,'infomis','Chữ hiện "'+x.x+'" lệch lời: cụm "'+ph+'" không có trong lời dòng này',x.x+'='+ph);
       if(on.safe){var so=safeOut(x);if(so.length)add('warn',i,'safe','Chữ hiện "'+x.x+'" ra ngoài vùng an toàn ('+so.join(', ')+')',x.x)}});
     if(l.dm>0&&l.ae!=null&&l.dm<(l.ae-l.as)-0.05)add('warn',i,'cut','Giọng dài '+fmt1(l.ae-l.as)+'s, bạn nhập '+fmt1(l.dm)+'s, sẽ bị cắt '+fmt1(l.ae-l.as-l.dm)+'s');
@@ -115,7 +116,7 @@ function lineMark(c,i){var r=checkClip(c),e=r.errs.filter(function(x){return x.i
   return (e?'<span class="lmark err">'+e+' lỗi</span>':'')+(w?'<span class="lmark warn">'+w+' cảnh báo</span>':'')}
 var chkT=null;
 /* Chạy lại kiểm tra sau khi gõ (chống rung 300 ms), chỉ vẽ lại bảng và nút Xuất. */
-function schedChk(){clearTimeout(chkT);chkT=setTimeout(function(){chkT=null;chkBump();var c=clip(S.cur),b=document.getElementById('chkbox');if(!c||!b)return;b.innerHTML=chkPanel(c);
+function schedChk(){clearTimeout(chkT);chkT=setTimeout(function(){chkT=null;chkBump();var c=clip(S.cur),b=document.getElementById('chkbox');if(!c||!b)return;b.innerHTML=chkPanel(c);var ct=document.getElementById('chkt');if(ct&&typeof chkSum==='function')ct.innerHTML=chkSum(c);
   var x=document.getElementById('expbtn');if(x){x.disabled=!!checkClip(c).errs.length||!!S.exporting;x.textContent=expLabel(c)}},300)}
 /* Xuất: còn LỖI thì chặn; chỉ còn CẢNH BÁO thì hỏi một lần. */
 function exportGuard(c){chkBump();var r=checkClip(c);
@@ -175,11 +176,18 @@ document.addEventListener('click',function(e){
 document.addEventListener('change',function(e){var t=e.target,d=t.dataset;
   if(d.cr){var p=d.cr.split('|'),r=CRULES[+p[0]],f=p[1];if(!r)return;
     if(f==='on'||f==='pat')r[f]=t.checked;else if(f==='text'){if(!t.value.trim()){msg('Cụm từ không được để trống.');render();return}r.text=t.value.trim()}else r[f]=t.value;
-    if(f==='scope'&&r.scope==='all')r.sv='';chkChanged();if(f==='pat'&&ruleBad(r))msg('Mẫu "'+r.text+'" không hợp lệ, luật này đang không có tác dụng.');render();return}
+    if(f==='scope'&&r.scope==='all')r.sv='';chkChanged();
+    /* Không vẽ lại cả trang (sẽ nuốt lần bấm kế tiếp và mất con trỏ ở ô đang gõ): chỉ cập nhật hàng này. */
+    var row=t.closest('.crr');if(row){row.classList.toggle('off',!r.on);row.classList.toggle('bad',ruleBad(r));
+      var ls=row.querySelector('[data-cr$="|lvl"]');if(ls)ls.className='lvl-'+r.lvl;
+      var sv=row.querySelector('[data-cr$="|sv"]');if(sv){sv.disabled=r.scope==='all';if(f==='scope'){sv.value=r.sv;sv.setAttribute('list',r.scope==='prod'?'plist2':'glist')}}
+      var tx=row.querySelector('[data-cr$="|text"]');if(tx)tx.title=ruleBad(r)?'Mẫu không hợp lệ':''}
+    if(f==='pat'&&ruleBad(r)){var o=document.getElementById('chktryout');if(o)o.textContent='Mẫu "'+r.text+'" không hợp lệ, luật này đang không có tác dụng.'}
+    return}
   if(t.id==='chkfold'){CHK.fold=t.checked;chkChanged();return}
   if(d.ckon){CHK.on[d.ckon]=t.checked;chkChanged();return}
-  if(d.ck){if(d.ck==='cta')CHK.cta=t.value;else if(isFinite(+t.value)&&t.value!=='')CHK[d.ck]=+t.value;chkChanged();render();return}
-  if(d.sf){if(isFinite(+t.value)&&t.value!=='')CHK.safe[d.sf]=Math.max(0,Math.min(45,+t.value));chkChanged();render();return}
+  if(d.ck){if(d.ck==='cta')CHK.cta=t.value;else if(isFinite(+t.value)&&t.value!=='')CHK[d.ck]=+t.value;chkChanged();return}
+  if(d.sf){if(isFinite(+t.value)&&t.value!=='')CHK.safe[d.sf]=Math.max(0,Math.min(45,+t.value));t.value=CHK.safe[d.sf];chkChanged();return}
   if(t.id==='safetog'){S.safe=t.checked;try{localStorage.setItem('xuongclip_safe',S.safe?'1':'0')}catch(x){}var sv=document.getElementById('safe');if(sv)sv.hidden=!S.safe;return}
   if(t.id==='chkimp'&&t.files[0]){var f0=t.files[0],rd=new FileReader();rd.onload=function(){var o;try{o=JSON.parse(String(rd.result))}catch(x){msg('File không phải JSON hợp lệ.');return}
       var arr=Array.isArray(o)?o:(o&&Array.isArray(o.rules)?o.rules:null);if(!arr){msg('Không thấy danh sách luật trong file.');return}

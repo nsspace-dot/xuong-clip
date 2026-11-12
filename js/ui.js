@@ -7,50 +7,6 @@ function nav(){
   document.getElementById('nav').innerHTML=tabs.map(function(t,i){
     return '<a class="'+(S.tab===t[0]?'on':'')+'" href="#'+t[0]+'">'+t[1]+(t[0]==='thieu'&&miss?'<span class="cnt">'+miss+'</span>':'')+'</a>'}).join('');
 }
-function vGhep(){
-  if(!CLIPS.length)return '<h1>Ghép clip</h1><div class="empty">Chưa có kịch bản. Qua tab Kịch bản để nạp.</div>';
-  if(!clip(S.cur))S.cur=CLIPS[0].id;
-  var c=clip(S.cur),sel='<select id="pickclip" style="max-width:420px" aria-label="Chọn clip">'+CLIPS.map(function(x){return '<option value="'+esc(x.id)+'" '+(x.id===c.id?'selected':'')+'>'+esc(x.id)+' · '+esc(x.name)+'</option>'}).join('')+'</select>';
-  if(isDirect(c))return '<h1>Ghép clip</h1>'+sel+'<div class="empty" style="margin-top:12px">Clip này do '+esc(c.who)+' quay trực tiếp, nằm ngoài tool ghép.</div>';
-  if(!c.auto)return '<h1>Ghép clip</h1>'+sel+'<div class="empty" style="margin-top:12px">Clip này chưa được ghép cảnh.<div class="bar" style="justify-content:center"><button class="btn pri" data-auto="'+esc(c.id)+'">Ghép cảnh tự động</button></div></div>';
-  var tot=timeline(c),cr=checkClip(c),bad=cr.errs.length,miss=c.lines.some(function(l){return !lineSeg(l)});
-  var h='<h1>'+esc(c.id)+' · '+esc(c.name)+'</h1><div class="bar" style="margin:0 0 6px">'+sel+chkDot(c)+pill(st(c))+'<span class="meta">'+esc(c.g)+' · tổng '+fmt1(tot)+'s</span></div>'+'<div class="rev"><div class="left">'+
-   '<div class="phone" id="phone"><video id="pv" class="pv" muted playsinline hidden></video><div id="sc"></div><div id="tr"></div><div id="inf"></div>'+safeOverlay()+'</div><div class="ctrl"><button class="btn sm" data-act="play">'+(S.play?'Dừng':'Phát thử')+'</button><input type="range" id="scrub" min="0" max="'+tot+'" step="0.1" value="'+S.t+'" aria-label="Thanh thời gian"><span class="t" id="tt"></span></div>'+
-   safeToggle()+
-   '<label class="note" style="display:block"><input type="checkbox" id="edtxt" '+(S.edTxt!==false?'checked':'')+'> Chế độ chỉnh chữ: hiện hết chữ của dòng đang chọn để kéo đổi vị trí</label>'+
-   '<div class="trbox"><label class="lab" for="trtype">Chuyển cảnh mặc định</label><select id="trtype" style="max-width:160px">'+Object.keys(TRN).map(function(k){return '<option value="'+k+'" '+(TR.type===k?'selected':'')+'>'+TRN[k]+'</option>'}).join('')+'</select> <input type="number" id="trdur" min="0.1" max="1" step="0.1" value="'+TR.dur+'" style="width:64px" aria-label="Thời gian chuyển cảnh"> giây<div class="note">Từng chỗ nối đổi riêng được ở ô "Chuyển vào cảnh này" của mỗi dòng.</div></div>'+
-   '<label class="note" style="display:block"><input type="checkbox" id="tts" '+(S.tts?'checked':'')+'> Đọc thoại bằng giọng của trình duyệt (để thử)</label><div class="note">Không phụ đề giọng đọc. Chữ thông tin chỉ hiện khi giọng tới đúng cụm. Có giọng đọc thì thời lượng mỗi dòng được đo theo giọng thật.</div></div><div>';
-  if(!canonicalProduct(c.prod))h+='<div class="w warn">Clip chưa ghi sản phẩm nên tool không gợi ý cảnh được. Sửa ô Sản phẩm ở tab Kịch bản.</div>';
-  h+=waveWide(c)+'<div class="chk" id="chkbox">'+chkPanel(c)+'</div>';
-  c.lines.forEach(function(l,i){
-    var sg=lineSeg(l);
-    h+='<div class="line '+(S.li===i?'cur':'')+'" data-li="'+i+'"><div class="lh"><b>Dòng '+(i+1)+'</b>'+lineMark(c,i)+(i>0?'<select data-ltr="'+i+'" aria-label="Chuyển vào cảnh này" style="max-width:190px"><option value="">Chuyển vào cảnh này: theo mặc định</option>'+Object.keys(TRN).map(function(k){return '<option value="'+k+'" '+(l.tr===k?'selected':'')+'>Chuyển vào cảnh này: '+TRN[k]+'</option>'}).join('')+'</select>':'')+'<span class="mono\" data-t="'+i+'">'+fmt1(l.s)+'s – '+fmt1(l.e)+'s · '+wc(l.t)+' từ</span></div><div class="lctl">'+lineCtl(c,l,i)+'</div>'+
-     '<textarea data-th="'+i+'" aria-label="Lời thoại dòng '+(i+1)+'">'+esc(l.t)+'</textarea><div class="need">Cảnh cần: '+esc(l.need)+'</div>'+
-     '<div class="seg">'+(sg?'<div class="thumb" style="'+bg(sg)+'"></div><div><div>'+esc(sg.label)+'</div><div class="meta">'+sid(sg.id)+' · '+sg.o+' · '+sg.d+'s'+((l.segIn||l.segOut)?' · lấy từ giây '+(l.segIn||0)+' đến '+(l.segOut||sg.d):'')+'</div></div>':lineLost(l)?'<span class="pill p-loi">Mất cảnh</span><span class="meta">'+esc(lostWhy(l))+'. Bấm Đổi cảnh để chọn lại.</span>':'<span class="pill p-missing">Chưa có cảnh</span>')+
-     (sg?'<button class="btn sm" data-pv="'+sg.id+'|'+esc(c.id)+'|'+i+'">Xem / cắt đoạn</button>':'')+
-     '<button class="btn sm" data-ch="'+i+'">'+(l.choose?'Đóng gợi ý':'Đổi cảnh')+'</button>'+
-     (l.lock?'<span class="bdg man" title="Chọn tay: Ghép lại tự động không đổi dòng này">đã khóa'+(sg?'':': để trống')+'</span><button class="btn xs" data-unlock="'+i+'">Mở khóa</button>':'')+'</div>';
-    if(sg&&l.why&&!l.lock)h+='<div class="meta why">Tự chọn. '+esc(l.why)+'</div>';
-    if(sg){var du=dupsOf(c,i);if(du.length)h+='<div class="w warn dupw">Đoạn này cũng dùng ở '+du.map(function(u){return '<button class="lnk" data-goto="'+esc(u.c.id)+'|'+u.i+'">'+esc(useText(u))+'</button>'}).join(', ')+' (cùng gian, khoảng thời gian chồng nhau).</div>'}
-    if(sg)h+=trackHTML(c,l,i,sg);
-    if(l.choose){
-      var rs=suggest(c,i,{all:true}).filter(function(r){return r.s.id!==l.seg}),good=rs.filter(function(r){return r.sc>=SG.min&&!r.dup}),low=rs.filter(function(r){return r.sc<SG.min||r.dup});
-      h+='<div class="cands2">'+(good.length?good.map(function(r){return candRow(c,i,r)}).join(''):'<div class="meta">'+(canonicalProduct(c.prod)?'Không có video "'+esc(canonicalProduct(c.prod))+'" nào đủ '+SG.min+' điểm cho dòng này.':'Clip chưa ghi sản phẩm nên không gợi ý được.')+'</div>')+
-        (low.length?'<details><summary>'+low.length+' video cùng sản phẩm chưa đủ điểm hoặc trùng đoạn (chỉ tự chọn khi chắc chắn)</summary>'+low.map(function(r){return candRow(c,i,r)}).join('')+'</details>':'')+
-        '<div class="bar" style="margin-top:4px"><button class="btn sm" data-pick="'+i+'|none|0">Bỏ chọn (báo thiếu)</button></div></div>';
-    }
-    h+='<div class="infos"><div class="irow2 hd"><span>Chữ hiện</span><span>Cụm làm mốc</span><span>Hiện lúc (s)</span><span>Ở lại (s)</span><span>Cỡ</span><span></span></div>'+l.infos.map(function(x,k){var ct=cue(l,x),sp=infoSpan(l,x);
-      return '<div class="irow2"><input type="text" data-ix="'+i+'|'+k+'" value="'+esc(x.x)+'" aria-label="Chữ hiện"><input type="text" data-ip="'+i+'|'+k+'" value="'+esc(x.ph)+'" aria-label="Cụm trong thoại"><input type="number" step="0.1" min="0" data-io="'+i+'|'+k+'" value="'+((x.off!=null&&x.off!=='')?(l.s+ +x.off).toFixed(1):'')+'" placeholder="'+(ct===null?'không khớp':'tự '+ct.toFixed(1))+'" aria-label="Giây chữ hiện"><input type="number" step="0.1" min="0.5" data-il="'+i+'|'+k+'" value="'+(x.len||'')+'" placeholder="'+(sp?'tự '+(sp.b-sp.a).toFixed(1):'')+'" aria-label="Giây ở lại"><input type="number" min="10" max="200" data-isz="'+i+'|'+k+'" value="'+(x.sz||'')+'" placeholder="'+INFO.size+'" aria-label="Cỡ chữ"><button class="btn sm" data-delinfo="'+i+'|'+k+'" aria-label="Xóa chữ này" title="Xóa chữ này">×</button></div>'}).join('')+
-      '<div><button class="btn sm" data-addinfo="'+i+'">+ Thêm chữ thông tin</button> <span class="meta">Ô giờ để trống thì tự tính theo cụm làm mốc. Kéo chữ ngay trên khung điện thoại để đổi vị trí. Chữ để trống sẽ bị bỏ qua.</span></div></div></div>';
-  });
-  h+='<div class="box" style="margin-top:12px"><h2>Xuất video thật</h2><div class="meta" style="margin-bottom:8px">Tool ghép các đoạn video theo kịch bản, chèn chữ thông tin, ra file 9:16. Tool dựng từng khung hình rồi ghép thành file MP4. Nếu Chrome không hỗ trợ cách này, tool tự chuyển sang ghi theo thời gian thật, lúc đó hãy giữ tab này ở phía trước.</div>'+
-  '<div class="bar"><button class="btn ok" id="expbtn" data-act="export" '+((bad||S.exporting)?'disabled':'')+'>'+esc(expLabel(c))+'</button><span class="meta" id="expst"></span></div>'+
-  (c.out&&!c.out.url?'<div class="meta" style="margin-top:8px">Đã xuất trước đây: '+esc(c.out.name||'')+' ('+esc(c.out.mb||'?')+' MB). Bản xem trong trình duyệt không còn sau khi tải lại trang.</div>':'')+(c.out&&c.out.url?'<div style="margin-top:10px"><video src="'+c.out.url+'" controls playsinline style="width:200px;border-radius:8px;background:#000"></video><div class="bar"><a class="btn pri" href="'+c.out.url+'" download="'+esc(c.out.name||(c.id+'.'+c.out.ext))+'">Tải video về ('+c.out.ext+', '+c.out.mb+' MB)</a></div></div>':'')+'</div>'+
-  coverBox(c)+
-  '<div class="bar"><button class="btn" data-auto="'+esc(c.id)+'">Ghép lại tự động</button>'+
-     (bad?'<span class="meta">Còn '+bad+' lỗi, xem bảng Kiểm tra. Sửa xong mới xuất được.</span>':miss?'<span class="meta">Còn cảnh thiếu, xem tab Thiếu source.</span>':'')+'</div>';
-  return h+'</div>'+voiceBox(c)+'</div>';
-}
 function candRow(c,i,r){var s=r.s;
   return '<div class="cand2'+(r.dup?' dup':'')+'"><div class="thumb" style="'+bg(s)+'"></div><div class="cinfo"><b>'+esc(s.label)+'</b> <span class="meta">điểm '+r.sc+' · '+s.o+' · '+fmt1(sdur(s))+'s</span><div class="why">'+esc(r.why.join('; '))+'</div></div>'+
    '<button class="btn sm" data-pv="'+s.id+'|'+esc(c.id)+'|'+i+'">Xem</button><button class="btn sm pri" data-pick="'+i+'|'+s.id+'|'+r.a+'">Chọn</button></div>'}
@@ -182,12 +138,15 @@ function startPlay(c){
     else{if(S.t>=tot){S.t=tot;stop();render();return}var cl=c.lines.filter(function(x){return S.t>=x.s&&S.t<x.e})[0];if(cl)S.li=c.lines.indexOf(cl);if(man)audSync(c)}
     drawPhone();document.querySelectorAll('.line').forEach(function(n,i){n.classList.toggle('cur',i===S.li)})},100);
 }
-function render(){
+/* Vẽ lại màn hiện tại. Khi đang vẽ mà có yêu cầu vẽ lại (ô đang gõ bị gỡ ra sinh sự kiện change/blur),
+   không vẽ lồng nhau mà hẹn vẽ lại ngay sau đó. */
+function render(){if(S._rendering){S._rerender=true;return}S._rendering=true;try{renderNow()}finally{S._rendering=false;if(S._rerender){S._rerender=false;setTimeout(render,0)}}}
+function renderNow(){
   chkBump();nav();var m=document.getElementById('main');
   var banner=S.msg?'<div class="w ok" style="margin-top:12px">'+esc(S.msg)+'</div>':'';S.msg='';
   m.innerHTML=banner+{kichban:vKichban,ghep:vGhep,thieu:vThieu,daxuat:vDaxuat,thuvien:vThuvien,caidat:vCaidat}[S.tab]();
   if(S.tab==='ghep'){drawPhone();afterGhep()}
-  renderSrcBar();if(S.tab==='thuvien'){observeThumbs();updSelUI()}
+  renderSrcBar();if(S.tab==='thuvien'){observeThumbs();updSelUI()}if(S.tab==='ghep')observeThumbs();
 }
 function afterGhep(){var c=clip(S.cur);if(!c||!c.lines||!c.lines.length)return;drawWave(c);
   c.lines.forEach(function(l){var sg=l.seg?seg(l.seg):null;if(sg)ensureStrip(sg)});
@@ -195,4 +154,4 @@ function afterGhep(){var c=clip(S.cur);if(!c||!c.lines||!c.lines.length)return;d
 function route(){var h=location.hash.replace('#','');if(['kichban','ghep','thieu','daxuat','thuvien','caidat'].indexOf(h)<0)h='kichban';S.tab=h;stop();render()}
 function stop(){stopB();S.stopAt=null;S.audLi=-1;S.lastLi=-1;var trl0=document.getElementById('tr');if(trl0)trl0.innerHTML='';if(S.aud){try{S.aud.pause()}catch(x){}S.aud=null}S.play=false;S.mode='';S.tok++;try{speechSynthesis.cancel()}catch(x){}if(S.tm){clearInterval(S.tm);S.tm=null}}
 function live(){var c=clip(S.cur);if(!c)return;timeline(c);
-  c.lines.forEach(function(l,i){var e=document.querySelector('[data-t="'+i+'"]');if(e)e.textContent=fmt1(l.s)+'s – '+fmt1(l.e)+'s · '+wc(l.t)+' từ'});drawPhone();schedChk()}
+  c.lines.forEach(function(l,i){document.querySelectorAll('[data-t="'+i+'"]').forEach(function(e){e.textContent=e.classList.contains('ld')?tc(l.e-l.s):tc(l.s)+' – '+tc(l.e)+' · '+wc(l.t)+' từ'})});drawPhone();schedChk()}
