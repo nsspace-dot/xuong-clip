@@ -11,7 +11,7 @@ var SRCF={ok:!!(window.showDirectoryPicker&&window.crypto&&crypto.subtle),h:null
 // Khóa do chính tab này để lại trước khi tải lại trang (pagehide ghi id vào sessionStorage) thì coi là của mình.
 // Tab nhân bản không có dấu này vì tab gốc chưa rời trang.
 try{SRCF.prev=sessionStorage.getItem('xuongclip_left')||'';sessionStorage.removeItem('xuongclip_left')}catch(e){}
-var STATE_VER=2,XDIR='.xuongclip',LOCK_TTL=120000,VEXT=/\.(mp4|mov|m4v|webm)$/i;
+var STATE_VER=3,XDIR='.xuongclip',LOCK_TTL=120000,VEXT=/\.(mp4|mov|m4v|webm)$/i;
 var OSTAT=['thô','đã dựng','đã đăng'];
 
 /* ---------- tiện ích nhỏ ---------- */
@@ -42,7 +42,8 @@ function stateObj(){
   var lib=Object.keys(LIB).map(function(k){return toRec(LIB[k])}).sort(function(a,b){return a.path<b.path?-1:a.path>b.path?1:0});
   var o={};for(var k in SRCF.extra)o[k]=SRCF.extra[k]; // giữ các trường lạ để không làm mất dữ liệu của bản tool khác
   var c=catalogToState();o.version=STATE_VER;o.savedAt=new Date().toISOString();o.library=lib;o.deleted=SRCF.deleted.slice();
-  o.products=c.products;o.rules=c.rules;o.mergeSkip=c.mergeSkip;return o}
+  o.products=c.products;o.rules=c.rules;o.mergeSkip=c.mergeSkip;
+  var cs=clipsState();for(var ck in cs)o[ck]=cs[ck];return o}
 function saveSeg(){markDirty()}
 
 /* ---------- đoán sản phẩm / trạng thái từ đường dẫn ---------- */
@@ -75,7 +76,7 @@ async function srcInit(){
 function srcReset(){
   stopBeat();clearInterval(SRCF.roT);SRCF.roT=null;clearTimeout(SRCF.saveT);SRCF.saveT=null;
   Object.keys(LIB).forEach(function(k){if(LIB[k].url)URL.revokeObjectURL(LIB[k].url)});
-  LIB={};SEGS=[];SRCF.deleted=[];PRODUCTS=[];PRULES=[];MERGESKIP=[];SRCF.newer=0;SRCF.extra={};S.sel={};S.undo=null;SRCF.open=false;SRCF.ro=false;SRCF.broken='';SRCF.err='';SRCF.dirty=false;SRCF.savedAt=0;dropRefs();
+  LIB={};SEGS=[];SRCF.deleted=[];PRODUCTS=[];PRULES=[];MERGESKIP=[];SRCF.newer=0;SRCF.extra={};S.sel={};S.undo=null;SRCF.open=false;SRCF.ro=false;SRCF.broken='';SRCF.err='';SRCF.dirty=false;SRCF.savedAt=0;SRCF.big=0;clipsReset();
 }
 async function srcPick(){
   if(!SRCF.ok){msg('Trình duyệt này không chọn được thư mục trên máy. Hãy dùng Chrome hoặc Edge trên máy tính.');return}
@@ -99,6 +100,7 @@ async function srcOpen(){
   try{
     await takeLock();
     var note=await loadState();
+    await loadClipAudio();sigReset();
     SRCF.open=true;
     await srcScan(note);
   }catch(e){if(isPermErr(e))permLost();else{SRCF.err='Không mở được thư mục "'+SRCF.name+'": '+errTxt(e);render()}}
@@ -145,13 +147,16 @@ async function loadState(){
     use={library:[],deleted:[]};
   }
   var v=+use.version||1;SRCF.newer=v>STATE_VER?v:0;SRCF.extra={};
-  for(var k in use)if(['version','savedAt','library','deleted','products','rules','mergeSkip'].indexOf(k)<0)SRCF.extra[k]=use[k];
+  for(var k in use)if(['version','savedAt','library','deleted','products','rules','mergeSkip','clips','clipsArchived','clipsTrash','exported','info'].indexOf(k)<0)SRCF.extra[k]=use[k];
   LIB={};(use.library||[]).forEach(function(o){if(o&&o.id&&o.path){var r=fromRec(o);LIB[r.id]=r}});
   SRCF.deleted=[];(Array.isArray(use.deleted)?use.deleted:[]).forEach(function(id){id=String(id);if(!isDel(id))SRCF.deleted.push(id)});
   catalogFromState(use);
-  if(v<2){migrateV1();if(!note)note='Đã chuyển dữ liệu thư viện sang định dạng mới (version 2), dữ liệu cũ giữ nguyên.'}
+  if(v<2)migrateV1();
+  SRCF.oldVer=v<STATE_VER?v:0;
+  if(v<STATE_VER&&(use.library||[]).length&&!note)note='Đã chuyển dữ liệu sang định dạng mới (version '+STATE_VER+'), dữ liệu cũ giữ nguyên và có bản sao state.v'+v+'.bak.json.';
+  var nAdopt=clipsFromState(use);if(nAdopt&&!note)note='Đã thêm '+nAdopt+' clip đang mở vào dữ liệu của thư mục này.';
   Object.keys(LIB).forEach(function(k){var r=LIB[k];if(r.p)r.p=ensureProduct(r.p,true);else{r.manual=false;r.guess=false}}); // auto=true: không đổi cờ của sản phẩm đã có
-  if(note&&!SRCF.ro&&!SRCF.newer){SRCF.dirty=true;SRCF.ver++}
+  if((note||SRCF.oldVer)&&!SRCF.ro&&!SRCF.newer){SRCF.dirty=true;SRCF.ver++}
   return note;
 }
 /* version 1 chưa có danh mục và cờ nhãn: lập danh mục từ các sản phẩm đang dùng.
@@ -217,9 +222,7 @@ async function srcScan(note){
 function rebuildSegs(){
   SEGS=Object.keys(LIB).map(function(k){return LIB[k]}).filter(function(r){return !isDel(r.id)})
     .sort(function(a,b){return (a.missing?1:0)-(b.missing?1:0)||(a.path<b.path?-1:a.path>b.path?1:0)});
-  dropRefs();
-}
-function dropRefs(){CLIPS.forEach(function(c){c.lines.forEach(function(l){if(l.seg&&!seg(l.seg)){l.seg=null;l.segIn=0;l.segOut=null}})})}
+}  // dòng có cảnh không còn trong thư viện vẫn giữ id: giao diện hiện "mất cảnh" để chọn lại
 
 /* ---------- xóa / khôi phục (chỉ ẩn thẻ, không đụng file) ---------- */
 function segDelete(id){if(!isDel(id))SRCF.deleted.push(id);rebuildSegs();markDirty()}
@@ -240,8 +243,12 @@ async function srcSave(){
     if(await permOf(SRCF.h)!=='granted'){permLost();return}
     var l=await readLock();if(lockOther(l)){setRO(l);render();return}
     var x=await xdir(),old=await readTxt(x,'state.json');
-    if(old!=null&&parseState(old))await writeTxt(x,'state.bak.json',old);
-    await writeTxt(x,'state.json',JSON.stringify(stateObj(),null,1));
+    await writePendingAudio();
+    var po=old!=null?parseState(old):null;
+    if(po){await writeTxt(x,'state.bak.json',old);
+      var ov=+po.version||1;if(ov<STATE_VER){var vn='state.v'+ov+'.bak.json';if(await readTxt(x,vn)==null)await writeTxt(x,vn,old)}} // bản trước khi nâng version giữ lâu dài
+    var txt=JSON.stringify(stateObj(),null,1);SRCF.big=txt.length>BIG_STATE?txt.length:0;
+    await writeTxt(x,'state.json',txt);
     await writeLock();
     SRCF.savedAt=Date.now();if(SRCF.err.indexOf('Chưa lưu')===0)SRCF.err='';if(SRCF.ver===v)SRCF.dirty=false;
   }catch(e){if(isPermErr(e))permLost();else{SRCF.err='Chưa lưu được state.json: '+errTxt(e)+'. Thay đổi vẫn giữ trong bộ nhớ, tool sẽ thử lại.';retry=10000;renderSrcBar()}}
@@ -249,7 +256,7 @@ async function srcSave(){
     if(SRCF.dirty&&canWrite()&&(SRCF.again||SRCF.ver!==v||retry)){SRCF.again=false;clearTimeout(SRCF.saveT);SRCF.saveT=setTimeout(srcSave,retry||1500)}
     updSaveSt()}
 }
-function srcFlush(){if(SRCF.dirty)srcSave()}
+function srcFlush(){touchClips(true);if(SRCF.dirty)srcSave()}
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')srcFlush();else if(SRCF.h&&SRCF.open&&SRCF.ro)srcCheckRO(false)});
 window.addEventListener('pagehide',function(){try{if(SRCF.open&&!SRCF.ro)sessionStorage.setItem('xuongclip_left',SRCF.me)}catch(e){}srcFlush();releaseLock()});
 window.addEventListener('pageshow',function(e){if(e.persisted&&SRCF.open&&!SRCF.ro&&SRCF.perm==='granted')takeLock().then(function(){render()}).catch(function(){})});
@@ -266,7 +273,7 @@ function saveStatus(){
   if(SRCF.savedAt)return 'Đã lưu vào .xuongclip/state.json lúc '+clock(SRCF.savedAt)+'.';
   return 'Dữ liệu thư viện nằm ở .xuongclip/state.json trong thư mục này.';
 }
-function updSaveSt(){var e=document.getElementById('savest');if(e)e.textContent=saveStatus()}
+function updSaveSt(){var e=document.getElementById('savest');if(e)e.textContent=saveStatus();updSaveBadge()}
 function renderSrcBar(){
   var el=document.getElementById('srcbar');if(!el)return;var h='',nm=esc(SRCF.name);
   if(!SRCF.ok)h+='<div class="w bad">Trình duyệt này không đọc được thư mục trên máy, nên thư viện source không dùng được. Hãy mở tool bằng Chrome hoặc Edge trên máy tính.</div>';
@@ -275,8 +282,9 @@ function renderSrcBar(){
   if(SRCF.newer)h+='<div class="w bad">Dữ liệu trong .xuongclip/state.json được tạo bởi bản tool mới hơn (version '+SRCF.newer+', bản này hiểu tới version '+STATE_VER+'). Bản này chỉ đọc và không ghi gì để tránh làm mất dữ liệu. Hãy cập nhật tool: mở đúng địa chỉ bản mới hoặc tải lại trang (Ctrl+F5).</div>';
   if(SRCF.broken)h+='<div class="w bad srcw">'+esc(SRCF.broken)+' <button class="btn sm" data-act="srcfresh">Bắt đầu dữ liệu mới</button></div>';
   if(SRCF.err)h+='<div class="w bad">'+esc(SRCF.err)+'</div>';
+  if(SRCF.big)h+='<div class="w warn">.xuongclip/state.json đang lớn ('+(SRCF.big/1048576).toFixed(1)+' MB). Nên lưu trữ hoặc xóa bớt các đợt cũ để tool mở nhanh hơn.</div>';
   if(SRCF.scan){var sc=SRCF.scan;h+='<div class="w ok scanw">'+esc(sc.t)+(sc.total?': '+sc.done+'/'+sc.total:'')+'...'+(sc.total&&sc.t!=='Đang tìm video trong thư mục'?'<progress max="'+sc.total+'" value="'+sc.done+'"></progress>':'')+'</div>'}
-  el.innerHTML=h;
+  el.innerHTML=h;updSaveBadge();
 }
 
 /* ---------- hình thu nhỏ: chỉ tạo khi thẻ hiện ra ---------- */

@@ -62,7 +62,7 @@ function exportClip(c){
     var newSt=function(){return {drew:false,bad:{},li:-1,tr:null,hasPrev:false,cur:newCanvas(cv.width,cv.height),prev:newCanvas(cv.width,cv.height)}};
     var done=function(blob,ext,actx){var url=URL.createObjectURL(blob),mb=(blob.size/1048576).toFixed(1),base=fname(c);c.out={url:url,ext:ext,mb:mb,name:base+'.'+ext};c.exported=true;
       EXP.unshift({id:'X'+(EXP.length+1)+'-'+c.id,clipId:c.id,fname:base+'.'+ext,g:c.g,name:c.name,d:Math.round(total),url:url,ext:ext,date:new Date().toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}),cap:c.name+' #tiktokshop #newshop',posted:false});
-      S.exporting=false;try{if(actx)actx.close()}catch(x){}saveOut(blob,base,ext,function(extra){msg('Đã xuất xong '+c.id+' ('+ext+', '+mb+' MB).'+extra+' Xem và tải về ngay bên dưới.')})};
+      S.exporting=false;try{if(actx)actx.close()}catch(x){}saveOut(blob,base,ext,function(extra,sv){if(sv){EXP[0].savedIn=S.dir.name;EXP[0].fname=sv}touchClips();msg('Đã xuất xong '+c.id+' ('+ext+', '+mb+' MB).'+extra+' Xem và tải về ngay bên dưới.')})};
     st('Đang nạp video...');
     return Promise.all(vids.map(function(v){return !v?0:new Promise(function(res){var d=false,f=function(){if(!d){d=true;res()}};v.oncanplay=f;v.onerror=f;setTimeout(f,20000);if(v.readyState>=3)f()})})).then(function(){
       var unreadable=[];vids.forEach(function(v,i){if(v&&!(v.videoWidth>0&&v.readyState>=2))unreadable.push(i+1)});
@@ -161,6 +161,6 @@ function uniq(dir,base,ext,i){var n=i>1?base+'-'+i+'.'+ext:base+'.'+ext;return d
 function saveOut(blob,base,ext,done){
   if(!S.dir){done('');return}
   Promise.resolve(S.dirPerm).then(function(pm){if(pm!=='granted')throw new Error('chưa cấp quyền thư mục');return uniq(S.dir,base,ext,1)})
-   .then(function(n){return S.dir.getFileHandle(n,{create:true}).then(function(fh){return fh.createWritable()}).then(function(w){return w.write(blob).then(function(){return w.close()})}).then(function(){done(' Đã lưu vào thư mục "'+S.dir.name+'" với tên '+n+'.')})})
+   .then(function(n){return S.dir.getFileHandle(n,{create:true}).then(function(fh){return fh.createWritable()}).then(function(w){return w.write(blob).then(function(){return w.close()})}).then(function(){done(' Đã lưu vào thư mục "'+S.dir.name+'" với tên '+n+'.',n)})})
    .catch(function(e){done(' Chưa lưu được vào thư mục ('+(e&&e.message?e.message:e)+'), hãy dùng nút Tải video về.')})
 }

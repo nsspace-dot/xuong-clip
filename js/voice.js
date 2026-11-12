@@ -1,7 +1,10 @@
 /* Giọng đọc Gemini (TTS) và căn giọng theo dòng. */
 function voiceFor(c){return (GEM.byGian&&GEM.byGian[c.g])||GEM.voice}
 function gemBlock(c){
-  return '<div class="bar" style="margin:0 0 8px"><button class="btn pri" data-act="gem" '+(S.genv?'disabled':'')+'>'+(S.genv?'Đang tạo giọng...':'Tạo giọng bằng Gemini')+'</button><span class="meta" id="gemst">'+(GEM.key?'Giọng '+esc(voiceFor(c))+' · '+esc(GEM.model):'Chưa nhập API key, vào tab Cài đặt.')+'</span></div>'+
+  var note=(c.audioMissing?'<div class="w warn">Không thấy file giọng '+esc(c.audio.file)+' trong .xuongclip. Cần tạo lại giọng (tool không tự gọi API).</div>':'')+
+   (c.voiceStale&&!c.audioMissing?'<div class="w warn">Lời thoại đã đổi sau khi tạo giọng. Cần tạo lại giọng cho khớp.</div>':'')+
+   (c.audio&&c.audioUrl?'<div class="meta">Giọng đã lưu: .xuongclip/'+esc(c.audio.file)+(c.audio.voice?' · giọng '+esc(c.audio.voice):'')+(c.audio.model?' · '+esc(c.audio.model):'')+(c.audio.src==='tải lên'?' · file tải lên':'')+'</div>':'');
+  return note+'<div class="bar" style="margin:0 0 8px"><button class="btn pri" data-act="gem" '+(S.genv?'disabled':'')+'>'+(S.genv?'Đang tạo giọng...':'Tạo giọng bằng Gemini')+'</button><span class="meta" id="gemst">'+(GEM.key?'Giọng '+esc(voiceFor(c))+' · '+esc(GEM.model):'Chưa nhập API key, vào tab Cài đặt.')+'</span></div>'+
    (c.audioUrl?'<audio controls src="'+c.audioUrl+'" style="width:100%;max-width:360px"></audio><div class="bar" style="margin:6px 0"><button class="btn sm" data-act="align">Căn lại cảnh theo giọng</button><span class="meta">'+(c.bounds?(c.bManual?'Đã chỉnh ranh giới bằng tay.':'Đã căn theo chỗ nghỉ của giọng ('+c.alignInfo+' mốc tìm thấy, còn lại ước lượng).'):'Đang chia theo số chữ.')+'</span></div>':'');
 }
 function gemSettings(){
@@ -68,6 +71,6 @@ function makeVoice(c){
      var u8=b64ToBytes(a.data),blob;
      if(String.fromCharCode(u8[0],u8[1],u8[2],u8[3])==='RIFF')blob=new Blob([u8],{type:'audio/wav'});
      else{var m=/rate=(\d+)/.exec(a.mime||'');blob=pcmToWav(u8,m?+m[1]:24000)}
-     c.audioFile=new File([blob],'giong-'+c.id+'.wav',{type:'audio/wav'});c.audioUrl=URL.createObjectURL(blob);c.audioDur=null;S.genv=false;var ta=new Audio(c.audioUrl);ta.onloadedmetadata=function(){c.audioDur=ta.duration;S.t=0;c.bounds=null;alignToSpeech(c,function(){render()})};msg('Đã tạo giọng cho '+c.id+'. Nghe thử bên dưới rồi bấm Xuất video thật.')})
+     setClipAudio(c,new File([blob],'giong-'+c.id+'.wav',{type:'audio/wav'}),{model:GEM.model,voice:voiceFor(c),src:'gemini'});c.audioDur=null;S.genv=false;var ta=new Audio(c.audioUrl);ta.onloadedmetadata=function(){c.audioDur=ta.duration;S.t=0;c.bounds=null;alignToSpeech(c,function(){touchClips();render()})};msg('Đã tạo giọng cho '+c.id+'. Nghe thử bên dưới rồi bấm Xuất video thật.')})
    .catch(function(e){S.genv=false;msg('Tạo giọng lỗi: '+(e&&e.message?e.message:e)+(/Failed to fetch|NetworkError/i.test(String(e))?' (bản trên claude.ai không gọi được dịch vụ ngoài, hãy dùng file xuong_clip.html mở trên máy)':''))});
 }
