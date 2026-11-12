@@ -65,10 +65,10 @@ function cardHTML(x,used){
    '<div class="prow2"><input type="text" class="pin'+(x.guess?' gsi':'')+'" list="plist" data-sp="'+x.id+'" value="'+esc(x.p)+'" placeholder="Sản phẩm" aria-label="Sản phẩm">'+badge+'</div>'+
    '<div class="prow2"><select data-so="'+x.id+'" aria-label="Nguồn gốc">'+OSTAT.map(function(o){return '<option '+(o===x.o?'selected':'')+'>'+o+'</option>'}).join('')+'</select>'+
     (x.url?'<button class="btn xs" data-pv="'+x.id+'||" title="Xem video" aria-label="Xem video">▶</button>':'')+'<button class="btn xs" data-delseg="'+x.id+'" title="Xóa thẻ (chỉ ẩn khỏi thư viện, không xóa file video)" aria-label="Xóa thẻ">✕</button></div>'+
-   '<div class="meta">'+(x.dx?fmt1(x.dx):'?')+'s · dùng '+(used[x.id]||0)+(x.desc?' · <span title="'+esc(x.desc+(x.tags||[]).map(function(t){return '\n'+t.a.toFixed(0)+'–'+t.b.toFixed(0)+'s: '+t.d}).join(''))+'">AI ✓</span>':'')+(x.missing?' · <b class="lost">mất file</b>':x.bad?' · <b class="lost">không phát được</b>':'')+'</div></div></div>';
+   '<div class="meta">'+(x.dx?fmt1(x.dx):'?')+'s · '+(used[x.id]?'<span title="'+esc(used[x.id].at.join(', '))+'">dùng '+used[x.id].n+'</span>'+(used[x.id].dup?' <b class="lost" title="Có đoạn chồng nhau giữa các clip cùng gian">trùng</b>':''):'dùng 0')+(x.desc?' · <span title="'+esc(x.desc+(x.tags||[]).map(function(t){return '\n'+t.a.toFixed(0)+'–'+t.b.toFixed(0)+'s: '+t.d}).join(''))+'">AI ✓</span>':'')+(x.missing?' · <b class="lost">mất file</b>':x.bad?' · <b class="lost">không phát được</b>':'')+'</div></div></div>';
 }
 function libGrid(){
-  var list=libList(),used={};CLIPS.forEach(function(c){c.lines.forEach(function(l){if(l.seg)used[l.seg]=(used[l.seg]||0)+1})});
+  var list=libList(),used={};CLIPS.forEach(function(c){c.lines.forEach(function(l,i){if(l.seg){var u=used[l.seg]=used[l.seg]||{n:0,at:[],dup:false};u.n++;u.at.push(c.id+' dòng '+(i+1));if(dupsOf(c,i).length)u.dup=true}})});
   return list.length?'<div class="grid cgrid">'+list.map(function(x){return cardHTML(x,used)}).join('')+'</div>':'<div class="empty">Không có video nào khớp bộ lọc.</div>';
 }
 function vThuvien(){

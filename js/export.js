@@ -142,7 +142,7 @@ function coverBox(c){var cv=covInit(c);
    '<div class="bar"><button class="btn ok" data-act="covexp">Xuất ảnh bìa (PNG)</button><span class="meta" id="covst"></span></div>'+
    (c.coverOut?'<div style="margin-top:8px"><img src="'+c.coverOut.url+'" style="width:120px;border-radius:8px" alt="Ảnh bìa đã xuất"><div class="bar"><a class="btn pri" href="'+c.coverOut.url+'" download="'+esc(c.coverOut.name)+'">Tải ảnh bìa về</a></div></div>':'')+'</div></div></div>'}
 function coverFrame(c,cv,canvas){var l=c.lines[cv.li],sg=l&&l.seg?seg(l.seg):null,ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;
-  var ph=function(){ctx.fillStyle=sg?'hsl('+hue(sg.p)+',55%,32%)':'#333';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.font='600 '+Math.round(W/14)+'px system-ui';ctx.textAlign='center';ctx.fillText(sg?'(cảnh mẫu, không có video)':'chưa có cảnh',W/2,H/2)};
+  var ph=function(){ctx.fillStyle=sg?'hsl('+hue(sg.p)+',55%,32%)':'#333';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.font='600 '+Math.round(W/14)+'px system-ui';ctx.textAlign='center';ctx.fillText(sg?'(không đọc được video)':'chưa có cảnh',W/2,H/2)};
   if(!sg||!sg.url){ph();return Promise.resolve()}
   var get=(S.cvVid&&S.cvVid.sid===sg.id)?Promise.resolve(S.cvVid.v):loadVid(sg.url).then(function(v){S.cvVid={sid:sg.id,v:v};return v});
   return get.then(function(v){if(!v||!v.videoWidth){ph();return}return seekVid(v,Math.max(0,Math.min(cv.tm,sdur(sg)-0.05))).then(function(){var k=Math.max(W/v.videoWidth,H/v.videoHeight),dw=v.videoWidth*k,dh=v.videoHeight*k;ctx.drawImage(v,(W-dw)/2,(H-dh)/2,dw,dh)})})}

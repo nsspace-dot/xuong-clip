@@ -41,19 +41,24 @@ function vGhep(){
    '<label class="note" style="display:block"><input type="checkbox" id="edtxt" '+(S.edTxt!==false?'checked':'')+'> Chế độ chỉnh chữ: hiện hết chữ của dòng đang chọn để kéo đổi vị trí</label>'+
    '<div class="trbox"><label class="lab" for="trtype">Chuyển cảnh mặc định</label><select id="trtype" style="max-width:160px">'+Object.keys(TRN).map(function(k){return '<option value="'+k+'" '+(TR.type===k?'selected':'')+'>'+TRN[k]+'</option>'}).join('')+'</select> <input type="number" id="trdur" min="0.1" max="1" step="0.1" value="'+TR.dur+'" style="width:64px" aria-label="Thời gian chuyển cảnh"> giây<div class="note">Từng chỗ nối đổi riêng được ở ô "Chuyển vào cảnh này" của mỗi dòng.</div></div>'+
    '<label class="note" style="display:block"><input type="checkbox" id="tts" '+(S.tts?'checked':'')+'> Đọc thoại bằng giọng của trình duyệt (để thử)</label><div class="note">Không phụ đề giọng đọc. Chữ thông tin chỉ hiện khi giọng tới đúng cụm. Có giọng đọc thì thời lượng mỗi dòng được đo theo giọng thật.</div></div><div>';
+  if(!canonicalProduct(c.prod))h+='<div class="w warn">Clip chưa ghi sản phẩm nên tool không gợi ý cảnh được. Sửa ô Sản phẩm ở tab Kịch bản.</div>';
   h+=waveWide(c)+'<div class="warns">'+(w.length?w.map(function(x){return '<div class="w '+x.k+'">'+esc(x.m)+'</div>'}).join(''):'<div class="w ok">Không có cảnh báo luật hay trùng cảnh.</div>')+'</div>';
   c.lines.forEach(function(l,i){
     var sg=l.seg?seg(l.seg):null;
     h+='<div class="line '+(S.li===i?'cur':'')+'" data-li="'+i+'"><div class="lh"><b>Dòng '+(i+1)+'</b>'+(i>0?'<select data-ltr="'+i+'" aria-label="Chuyển vào cảnh này" style="max-width:190px"><option value="">Chuyển vào cảnh này: theo mặc định</option>'+Object.keys(TRN).map(function(k){return '<option value="'+k+'" '+(l.tr===k?'selected':'')+'>Chuyển vào cảnh này: '+TRN[k]+'</option>'}).join('')+'</select>':'')+'<span class="mono\" data-t="'+i+'">'+fmt1(l.s)+'s – '+fmt1(l.e)+'s · '+wc(l.t)+' từ</span></div><div class="lctl">'+lineCtl(c,l,i)+'</div>'+
      '<textarea data-th="'+i+'" aria-label="Lời thoại dòng '+(i+1)+'">'+esc(l.t)+'</textarea><div class="need">Cảnh cần: '+esc(l.need)+'</div>'+
-     '<div class="seg">'+(sg?'<div class="thumb" style="'+bg(sg)+'"></div><div><div>'+esc(sg.label)+'</div><div class="meta">'+sg.id+' · '+sg.o+' · '+sg.d+'s'+((l.segIn||l.segOut)?' · lấy từ giây '+(l.segIn||0)+' đến '+(l.segOut||sg.d):'')+'</div></div>':'<span class="pill p-missing">Chưa có cảnh</span>')+
+     '<div class="seg">'+(sg?'<div class="thumb" style="'+bg(sg)+'"></div><div><div>'+esc(sg.label)+'</div><div class="meta">'+sid(sg.id)+' · '+sg.o+' · '+sg.d+'s'+((l.segIn||l.segOut)?' · lấy từ giây '+(l.segIn||0)+' đến '+(l.segOut||sg.d):'')+'</div></div>':'<span class="pill p-missing">Chưa có cảnh</span>')+
      (sg?'<button class="btn sm" data-pv="'+sg.id+'|'+esc(c.id)+'|'+i+'">Xem / cắt đoạn</button>':'')+
-     '<button class="btn sm" data-ch="'+i+'">'+(l.choose?'Đóng gợi ý':'Đổi cảnh')+'</button></div>';
+     '<button class="btn sm" data-ch="'+i+'">'+(l.choose?'Đóng gợi ý':'Đổi cảnh')+'</button>'+
+     (l.lock?'<span class="bdg man" title="Chọn tay: Ghép lại tự động không đổi dòng này">đã khóa'+(sg?'':': để trống')+'</span><button class="btn xs" data-unlock="'+i+'">Mở khóa</button>':'')+'</div>';
+    if(sg&&l.why&&!l.lock)h+='<div class="meta why">Tự chọn. '+esc(l.why)+'</div>';
+    if(sg){var du=dupsOf(c,i);if(du.length)h+='<div class="w warn dupw">Đoạn này cũng dùng ở '+du.map(function(u){return '<button class="lnk" data-goto="'+esc(u.c.id)+'|'+u.i+'">'+esc(useText(u))+'</button>'}).join(', ')+' (cùng gian, khoảng thời gian chồng nhau).</div>'}
     if(sg)h+=trackHTML(c,l,i,sg);
     if(l.choose){
-      var cs=SEGS.filter(function(s){return !s.missing&&s.id!==l.seg&&prodMatch(c.prod,s.p)}).sort(function(a,b){return (overlap(l.need,segText(b))-overlap(l.need,segText(a)))||((a.o==='thô'?0:1)-(b.o==='thô'?0:1))});
-      h+='<div class="cands">'+(cs.length?cs.map(function(s){return '<div class="cand" data-pick="'+i+'|'+s.id+'"><div class="thumb" style="'+bg(s)+'"></div>'+esc(s.label)+'<br><span class="meta">'+s.o+' · '+s.d+'s'+(usedElsewhere(s.id,c).length?' · trùng':'')+'</span><br><button class="btn sm" data-pv="'+s.id+'|'+esc(c.id)+'|'+i+'" style="margin-top:3px">Xem</button></div>'}).join(''):'<span class="meta">Chưa có đoạn nào khác của sản phẩm này.</span>')+
-        '<div class="cand" data-pick="'+i+'|none"><br>Bỏ chọn<br>(báo thiếu)</div></div>';
+      var rs=suggest(c,i,{all:true}).filter(function(r){return r.s.id!==l.seg}),good=rs.filter(function(r){return r.sc>=SG.min&&!r.dup}),low=rs.filter(function(r){return r.sc<SG.min||r.dup});
+      h+='<div class="cands2">'+(good.length?good.map(function(r){return candRow(c,i,r)}).join(''):'<div class="meta">'+(canonicalProduct(c.prod)?'Không có video "'+esc(canonicalProduct(c.prod))+'" nào đủ '+SG.min+' điểm cho dòng này.':'Clip chưa ghi sản phẩm nên không gợi ý được.')+'</div>')+
+        (low.length?'<details><summary>'+low.length+' video cùng sản phẩm chưa đủ điểm hoặc trùng đoạn (chỉ tự chọn khi chắc chắn)</summary>'+low.map(function(r){return candRow(c,i,r)}).join('')+'</details>':'')+
+        '<div class="bar" style="margin-top:4px"><button class="btn sm" data-pick="'+i+'|none|0">Bỏ chọn (báo thiếu)</button></div></div>';
     }
     h+='<div class="infos"><div class="irow2 hd"><span>Chữ hiện</span><span>Cụm làm mốc</span><span>Hiện lúc (s)</span><span>Ở lại (s)</span><span>Cỡ</span><span></span></div>'+l.infos.map(function(x,k){var ct=cue(l,x),sp=infoSpan(l,x);
       return '<div class="irow2"><input type="text" data-ix="'+i+'|'+k+'" value="'+esc(x.x)+'" aria-label="Chữ hiện"><input type="text" data-ip="'+i+'|'+k+'" value="'+esc(x.ph)+'" aria-label="Cụm trong thoại"><input type="number" step="0.1" min="0" data-io="'+i+'|'+k+'" value="'+((x.off!=null&&x.off!=='')?(l.s+ +x.off).toFixed(1):'')+'" placeholder="'+(ct===null?'không khớp':'tự '+ct.toFixed(1))+'" aria-label="Giây chữ hiện"><input type="number" step="0.1" min="0.5" data-il="'+i+'|'+k+'" value="'+(x.len||'')+'" placeholder="'+(sp?'tự '+(sp.b-sp.a).toFixed(1):'')+'" aria-label="Giây ở lại"><input type="number" min="10" max="200" data-isz="'+i+'|'+k+'" value="'+(x.sz||'')+'" placeholder="'+INFO.size+'" aria-label="Cỡ chữ"><button class="btn sm" data-delinfo="'+i+'|'+k+'" aria-label="Xóa chữ này" title="Xóa chữ này">×</button></div>'}).join('')+
@@ -67,20 +72,27 @@ function vGhep(){
      (bad?'<span class="meta">Còn '+bad+' lỗi luật, sửa xong mới xuất được.</span>':miss?'<span class="meta">Còn cảnh thiếu, xem tab Thiếu source.</span>':'')+'</div>';
   return h+'</div>'+voiceBox(c)+'</div>';
 }
+function candRow(c,i,r){var s=r.s;
+  return '<div class="cand2'+(r.dup?' dup':'')+'"><div class="thumb" style="'+bg(s)+'"></div><div class="cinfo"><b>'+esc(s.label)+'</b> <span class="meta">điểm '+r.sc+' · '+s.o+' · '+fmt1(sdur(s))+'s</span><div class="why">'+esc(r.why.join('; '))+'</div></div>'+
+   '<button class="btn sm" data-pv="'+s.id+'|'+esc(c.id)+'|'+i+'">Xem</button><button class="btn sm pri" data-pick="'+i+'|'+s.id+'|'+r.a+'">Chọn</button></div>'}
 function vThieu(){
   var m=missingAll(),ks=Object.keys(m);
-  var txt=ks.map(function(k){return k+':\n'+m[k].map(function(x){return '- '+x.l.need+' ('+x.c.id+', dòng '+(x.i+1)+')'}).join('\n')}).join('\n\n');
-  var h='<h1>Thiếu source</h1><p class="sub">Mỗi cảnh thiếu có ba hướng xử lý: dùng cảnh có sẵn gần nhất, đổi thoại cho khớp cảnh có sẵn, hoặc nhờ chị Diễm quay thêm.</p>';
+  var txt=ks.map(function(k){return k+':\n'+m[k].map(function(x){return '- '+(x.l.need||('cảnh cho câu: '+x.l.t))+' ('+x.c.id+', dòng '+(x.i+1)+')'}).join('\n')}).join('\n\n');
+  var h='<h1>Thiếu source</h1><p class="sub">Mỗi cảnh thiếu có ba hướng xử lý: dùng cảnh có sẵn (chỉ hiện khi có video cùng sản phẩm đủ '+SG.min+' điểm), đổi thoại cho khớp cảnh có sẵn, hoặc quay thêm. Tool không gợi ý video khác sản phẩm, video chưa gắn nhãn'+(SG.allowGuess?'':' hay nhãn đoán chưa xác nhận')+'.</p>';
   if(!ks.length)return h+'<div class="empty">Không có cảnh nào thiếu. Nếu chưa thấy gì, hãy ghép cảnh tự động ở tab Kịch bản trước.</div>';
   ks.forEach(function(k){
     h+='<div class="grp"><h3>'+esc(k)+' ('+m[k].length+' cảnh)</h3>'+m[k].map(function(x){
-      var al=altSegs(x.c,x.l);
-      return '<div class="miss-item"><b>'+esc(x.c.id)+', dòng '+(x.i+1)+'</b> · cần: '+esc(x.l.need)+'<div class="meta">Thoại: '+esc(x.l.t)+'</div><div class="alts">'+
-        '<div><div class="lab">Hướng 1: dùng cảnh có sẵn gần nhất</div>'+(al.length?al.map(function(s){return '<div class="alt"><div class="thumb" style="'+bg(s)+'"></div><div style="flex:1;min-width:140px">'+esc(s.label)+'<div class="meta">'+s.id+' · '+s.o+(usedElsewhere(s.id,x.c).length?' · đã dùng ở clip khác':'')+'</div></div><button class="btn sm" data-pv="'+s.id+'|'+esc(x.c.id)+'|'+x.i+'">Xem</button> <button class="btn sm" data-useseg="'+esc(x.c.id)+'|'+x.i+'|'+s.id+'">Dùng đoạn này</button></div>'}).join(''):'<div class="meta">Chưa có đoạn nào đủ gần.</div>')+'</div>'+
-        '<div><div class="lab">Hướng 2: đổi thoại cho khớp cảnh có sẵn</div><div class="alt"><div class="meta" style="flex:1">'+(al.length?'Giữ cảnh "'+esc(al[0].label)+'" và viết lại câu thoại chỉ nói điều hình ảnh này thể hiện. Bản thật: Claude đề xuất sẵn câu thoại mới để bạn chọn.':'Cần thêm đoạn trong thư viện trước.')+'</div>'+(al.length?'<button class="btn sm" data-useseg="'+esc(x.c.id)+'|'+x.i+'|'+al[0].id+'">Dùng cảnh này, tôi tự sửa thoại</button>':'')+'</div></div>'+
-        '<div><div class="lab">Hướng 3: quay thêm</div><div class="alt"><div class="meta" style="flex:1">Quay: '+esc(x.l.need)+'. Gợi ý: 4–6 giây, giữ máy cố định, nền sáng, quay hai góc để có thêm lựa chọn.</div></div></div></div></div>'}).join('')+'</div>';
+      var al=suggest(x.c,x.i).slice(0,2),need=x.l.need||('cảnh cho câu "'+x.l.t+'"'),cid=esc(x.c.id);
+      var head='<b>'+cid+', dòng '+(x.i+1)+'</b> · cần: '+esc(need)+(x.l.lock?' <span class="bdg man">đã khóa: để trống</span>':'')+'<div class="meta">Thoại: '+esc(x.l.t)+'</div>';
+      if(!al.length)return '<div class="miss-item">'+head+'<div class="w warn" style="margin-top:6px"><b>Chưa có source phù hợp, cần quay thêm.</b> Cảnh cần quay: '+esc(need)+'.'+
+        (canonicalProduct(x.c.prod)?'':' (Clip chưa ghi sản phẩm nên tool không gợi ý được.)')+'</div>'+
+        '<div class="alts"><div><div class="lab">Quay thêm</div><div class="alt"><div class="meta" style="flex:1">Quay: '+esc(need)+'. Gợi ý: 4–6 giây, giữ máy cố định, nền sáng, quay hai góc để có thêm lựa chọn.</div></div></div></div></div>';
+      return '<div class="miss-item">'+head+'<div class="alts">'+
+        '<div><div class="lab">Hướng 1: dùng cảnh có sẵn đủ điểm</div>'+al.map(function(r){var s=r.s;return '<div class="alt'+(r.dup?' dup':'')+'"><div class="thumb" style="'+bg(s)+'"></div><div style="flex:1;min-width:160px">'+esc(s.label)+' <span class="meta">điểm '+r.sc+'</span><div class="why">'+esc(r.why.join('; '))+'</div></div><button class="btn sm" data-pv="'+s.id+'|'+cid+'|'+x.i+'">Xem</button> <button class="btn sm" data-useseg="'+cid+'|'+x.i+'|'+s.id+'|'+r.a+'">Dùng đoạn này</button></div>'}).join('')+'</div>'+
+        '<div><div class="lab">Hướng 2: đổi thoại cho khớp cảnh có sẵn</div><div class="alt"><div class="meta" style="flex:1">Giữ cảnh "'+esc(al[0].s.label)+'" và viết lại câu thoại chỉ nói điều hình ảnh này thể hiện.</div><button class="btn sm" data-useseg="'+cid+'|'+x.i+'|'+al[0].s.id+'|'+al[0].a+'">Dùng cảnh này, tôi tự sửa thoại</button></div></div>'+
+        '<div><div class="lab">Hướng 3: quay thêm</div><div class="alt"><div class="meta" style="flex:1">Quay: '+esc(need)+'. Gợi ý: 4–6 giây, giữ máy cố định, nền sáng, quay hai góc để có thêm lựa chọn.</div></div></div></div></div>'}).join('')+'</div>';
   });
-  return h+'<div class="bar"><button class="btn pri" data-act="copy">'+(S.copied?'Đã sao chép':'Sao chép danh sách quay thêm gửi Diễm')+'</button></div><textarea id="misstxt" readonly style="min-height:110px;margin-top:10px" aria-label="Danh sách quay thêm">'+esc(txt)+'</textarea>';
+  return h+'<div class="bar"><button class="btn pri" data-act="copy">'+(S.copied?'Đã sao chép':'Sao chép danh sách quay thêm gửi người quay')+'</button><span class="meta">Gom theo sản phẩm.</span></div><textarea id="misstxt" readonly style="min-height:110px;margin-top:10px" aria-label="Danh sách quay thêm">'+esc(txt)+'</textarea>';
 }
 function vDaxuat(){
   var gs=['Tất cả'].concat(Object.keys(EXP.reduce(function(o,x){o[x.g]=1;return o},{})));
@@ -104,10 +116,14 @@ function peopleSettings(){
    (PEOPLE.length?PEOPLE.map(function(p,i){return '<div class="bar" style="margin-top:0"><input type="text" data-pname="'+i+'" value="'+esc(p.name)+'" aria-label="Tên người '+(i+1)+'" style="max-width:240px"><label class="ck"><input type="checkbox" data-pdirect="'+i+'" '+(p.direct?'checked':'')+'><span>Quay trực tiếp, không ghép</span></label><button class="btn sm" data-act="pdel" data-i="'+i+'">Xóa</button></div>'}).join(''):'<div class="meta">Chưa có ai trong danh sách.</div>')+
    '<div class="bar" style="margin-top:0"><input type="text" id="pnew" placeholder="Tên người mới" aria-label="Tên người mới" style="max-width:240px"><button class="btn" data-act="padd">Thêm</button></div></div>';
 }
+function suggestSettings(){
+  return '<div class="set"><b>Gợi ý cảnh</b><div class="meta">Chỉ gợi ý video cùng sản phẩm (theo tên chuẩn và tên tương đương). Video chưa gắn nhãn không bao giờ được gợi ý. Điểm tối đa 100: khớp "cảnh cần" với tag/mô tả AI hoặc tên video (60), đủ dài (15), chưa dùng (15), video thô (5). Dưới ngưỡng thì không gợi ý và cảnh vào tab Thiếu source.</div>'+
+   '<div class="row2"><div><label class="lab" for="sgmin">Ngưỡng điểm tối thiểu (10–95)</label><input type="number" id="sgmin" min="10" max="95" step="5" value="'+SG.min+'"></div></div>'+
+   '<label class="ck"><input type="checkbox" id="sgguess" '+(SG.allowGuess?'checked':'')+'><span>Cho phép gợi ý cả video có nhãn sản phẩm "đoán" chưa xác nhận</span></label></div>'}
 function vCaidat(){
   return '<h1>Cài đặt</h1><p class="sub">Chỉnh người phụ trách, danh mục sản phẩm, quy tắc gắn nhãn, chữ thông tin, thư mục lưu clip, giọng Gemini và bảng luật. Thay đổi được nhớ trong trình duyệt này.</p>'+
   gemSettings()+'<div class="set"><b>Bảng luật tự kiểm tra</b>'+RULES.map(function(r){return '<label class="ck"><input type="checkbox" data-rule="'+r.id+'" '+(r.on?'checked':'')+'><span>'+r.m+'</span></label>'}).join('')+'</div>'+
-  peopleSettings()+catalogSettings()+rulesSettings()+infoSettings()+folderSettings()+deletedSettings()+qualitySettings()+'<div class="set"><div class="meta">Chưa có: nhạc nền, logo từng gian.</div></div>';
+  peopleSettings()+catalogSettings()+rulesSettings()+suggestSettings()+infoSettings()+folderSettings()+deletedSettings()+qualitySettings()+'<div class="set"><div class="meta">Chưa có: nhạc nền, logo từng gian.</div></div>';
 }
 function infoSettings(){
   var pos=[['top','Phía trên'],['mid','Giữa'],['bottom','Phía dưới']],md=[['line','Đến hết câu thoại'],['secs','Một số giây cố định']];
@@ -155,7 +171,7 @@ function drawPhone(){
   var shown=l.infos.map(function(x,k){return {x:x,k:k}}).filter(function(o){var x=o.x;if(!infoOk(x))return false;if(edit)return true;
     if(S.play&&S.mode==='tts'&&S.bp[li]!==undefined&&(x.off==null||x.off==='')){var i=l.t.toLowerCase().indexOf(x.ph.toLowerCase());return x.ph&&i>=0&&S.bp[li]>=i}
     var sp=infoSpan(l,x);return sp&&t>=sp.a&&t<sp.b});
-  inf.innerHTML=(sg?'<div class="badge">'+sg.id+'</div>':'')+shown.map(function(o){return '<div class="info'+(edit?' drag':'')+'" data-dx="'+li+'|'+o.k+'" style="'+infoStyle((ph.clientWidth||270)/720,o.x)+'">'+esc(o.x.x)+'</div>'}).join('');
+  inf.innerHTML=(sg?'<div class="badge">'+esc(sg.label)+'</div>':'')+shown.map(function(o){return '<div class="info'+(edit?' drag':'')+'" data-dx="'+li+'|'+o.k+'" style="'+infoStyle((ph.clientWidth||270)/720,o.x)+'">'+esc(o.x.x)+'</div>'}).join('');
   var tt2=document.getElementById('tt');if(tt2)tt2.textContent=t.toFixed(1)+' / '+fmt1(tot)+'s';
   var sr=document.getElementById('scrub');if(sr&&document.activeElement!==sr)sr.value=t;
 }
