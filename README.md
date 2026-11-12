@@ -16,11 +16,13 @@ js/
   timeline.js       Đọc kịch bản, tính dòng thời gian, chữ thông tin, chuyển cảnh
   match.js          Ghép cảnh tự động, kiểm tra luật, trạng thái clip
   library.js        AI gắn tag, thanh chọn đoạn, xem/cắt đoạn; IndexedDB chỉ giữ handle thư mục
+  catalog.js        Danh mục sản phẩm, tên tương đương, canonicalProduct(), quy tắc gắn nhãn, gợi ý gộp
   source.js         Thư mục source: chọn thư mục, quét video, state.json, khóa, hình thu nhỏ
   voice.js          Giọng đọc Gemini và căn giọng theo dòng
   wave.js           Sóng âm giọng đọc, vạch chia dòng
   export.js         Xuất video MP4 (WebCodecs + mp4-muxer), ảnh bìa, lưu file
   ui.js             Giao diện các tab, xem trước, điều hướng
+  libview.js        Tab Thư viện (lọc, chọn nhiều, gắn hàng loạt, hoàn tác) và phần danh mục / quy tắc ở Cài đặt
   events.js         Bắt sự kiện click / nhập / kéo thả
   main.js           Khởi động (nạp cuối cùng)
 ```
@@ -35,14 +37,17 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
 
 ```
 <thư mục source>/.xuongclip/
-  state.json        version, savedAt, library (path, size, mtime, label, product, status, duration, desc, tags), deleted
+  state.json        version 2: savedAt, library (path, size, mtime, label, product, manual, guess, status,
+                    duration, desc, tags), deleted, products [{name, aliases, auto}], rules [{contains, product}], mergeSkip
   state.bak.json    bản state.json trước lần ghi gần nhất
   lock.json         khóa chống hai tab / hai máy cùng ghi (hết hạn sau 2 phút không cập nhật)
   state.corrupt-<giờ>.json   chỉ có khi state.json bị hỏng
 ```
 
 - Id video = SHA-1 của `đường dẫn tương đối|size|mtime`.
-- Sản phẩm đoán theo tên thư mục chứa video (bỏ qua thư mục tên `thô`, `đã dựng`, `đã đăng`); video ở gốc thì đoán từ tên file.
+- Nhãn sản phẩm theo thứ tự: gắn tay (`manual`, không bao giờ bị ghi đè) → quy tắc (chuỗi trong đường dẫn, quy tắc trên được ưu tiên) → đoán (`guess`, theo tên thư mục chứa video, bỏ qua thư mục `thô` / `đã dựng` / `đã đăng`; ở gốc thì đoán từ tên file theo danh mục).
+- Tên sản phẩm luôn quy về tên chuẩn bằng `canonicalProduct()` (bỏ dấu, không phân biệt hoa thường, bỏ khoảng trắng thừa, tra theo tên tương đương).
+- Tool gặp `state.json` có version mới hơn bản nó hiểu thì chỉ đọc, không ghi. Gặp version 1 thì tự chuyển lên 2 (bản cũ giữ ở `state.bak.json`).
 - Bỏ qua thư mục / file bắt đầu bằng `.`, `$`, `@`, `#`, `~` (ví dụ `@eaDir`, `#recycle` của Synology).
 - Nút Xóa chỉ ẩn thẻ; khôi phục ở tab Cài đặt.
 - API key Gemini, tên model, người phụ trách lưu trong localStorage của trình duyệt, **không** ghi vào `state.json`.
