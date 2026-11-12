@@ -5,13 +5,13 @@
    - Khóa .xuongclip/lock.json để hai tab / hai máy không cùng ghi.
    TUYỆT ĐỐI không xóa, đổi tên, di chuyển file nào ngoài thư mục .xuongclip. */
 var LIB={};   // id -> bản ghi video (gồm cả video mất file và video đã xóa khỏi thư viện)
-var SRCF={ok:!!(window.showDirectoryPicker&&window.crypto&&crypto.subtle),h:null,name:'',perm:'',open:false,ro:false,roAt:0,broken:'',err:'',
+var SRCF={ok:!!(window.showDirectoryPicker&&window.crypto&&crypto.subtle),h:null,name:'',perm:'',open:false,ro:false,roAt:0,broken:'',newer:0,extra:{},err:'',
   dirty:false,ver:0,saveT:null,saving:false,again:false,savedAt:0,deleted:[],scan:null,beat:null,roT:null,
   me:Math.random().toString(36).slice(2)+Date.now().toString(36),prev:''};
 // Khóa do chính tab này để lại trước khi tải lại trang (pagehide ghi id vào sessionStorage) thì coi là của mình.
 // Tab nhân bản không có dấu này vì tab gốc chưa rời trang.
 try{SRCF.prev=sessionStorage.getItem('xuongclip_left')||'';sessionStorage.removeItem('xuongclip_left')}catch(e){}
-var XDIR='.xuongclip',LOCK_TTL=120000,VEXT=/\.(mp4|mov|m4v|webm)$/i;
+var STATE_VER=2,XDIR='.xuongclip',LOCK_TTL=120000,VEXT=/\.(mp4|mov|m4v|webm)$/i;
 var OSTAT=['thô','đã dựng','đã đăng'];
 
 /* ---------- tiện ích nhỏ ---------- */
@@ -32,26 +32,27 @@ async function moveAside(dir,from,to){var t=await readTxt(dir,from);if(t==null)r
 function parseState(t){try{var o=JSON.parse(t);if(o&&typeof o==='object'&&Array.isArray(o.library))return o}catch(e){}return null}
 
 /* ---------- bản ghi <-> state.json ---------- */
-function toRec(r){return {id:r.id,path:r.path,size:r.size,mtime:r.mtime,label:r.label||'',product:r.p||'',status:r.o||'thô',duration:Math.round((r.dx||0)*1000)/1000,desc:r.desc||'',tags:(r.tags||[]).map(function(t){return {a:t.a,b:t.b,d:t.d}})}}
+function toRec(r){return {id:r.id,path:r.path,size:r.size,mtime:r.mtime,label:r.label||'',product:r.p||'',status:r.o||'thô',duration:Math.round((r.dx||0)*1000)/1000,manual:!!r.manual,guess:!!(r.guess&&r.p),desc:r.desc||'',tags:(r.tags||[]).map(function(t){return {a:t.a,b:t.b,d:t.d}})}}
 function fromRec(o){var dx=+o.duration||0;
   return {id:String(o.id),path:String(o.path||''),size:+o.size||0,mtime:+o.mtime||0,label:String(o.label||''),p:String(o.product||''),o:OSTAT.indexOf(o.status)>=0?o.status:'thô',
-    dx:dx,d:dx?Math.max(1,Math.round(dx)):5,desc:String(o.desc||''),
+    dx:dx,d:dx?Math.max(1,Math.round(dx)):5,manual:!!o.manual,guess:!!o.guess,desc:String(o.desc||''),
     tags:Array.isArray(o.tags)?o.tags.filter(function(t){return t&&isFinite(+t.a)&&isFinite(+t.b)}).map(function(t){return {a:+t.a,b:+t.b,d:String(t.d||'')}}):[],
     missing:true,url:null,fh:null}}
 function stateObj(){
   var lib=Object.keys(LIB).map(function(k){return toRec(LIB[k])}).sort(function(a,b){return a.path<b.path?-1:a.path>b.path?1:0});
-  return {version:1,savedAt:new Date().toISOString(),library:lib,deleted:SRCF.deleted.slice()}}
+  var o={};for(var k in SRCF.extra)o[k]=SRCF.extra[k]; // giữ các trường lạ để không làm mất dữ liệu của bản tool khác
+  var c=catalogToState();o.version=STATE_VER;o.savedAt=new Date().toISOString();o.library=lib;o.deleted=SRCF.deleted.slice();
+  o.products=c.products;o.rules=c.rules;o.mergeSkip=c.mergeSkip;return o}
 function saveSeg(){markDirty()}
 
 /* ---------- đoán sản phẩm / trạng thái từ đường dẫn ---------- */
-function knownProds(){var all={};Object.keys(LIB).forEach(function(k){if(LIB[k].p)all[LIB[k].p]=1});Object.keys(HUE).forEach(function(k){all[k]=1});return Object.keys(all)}
 function isStatusDir(n){return /^(tho|da dung|da dang|raw|ai)$/.test(norm(n.trim()))}
 function guessO(path){var f=path.split('/').slice(0,-1).map(function(x){return norm(x.trim())});
   for(var i=f.length-1;i>=0;i--){if(f[i]==='da dung')return 'đã dựng';if(f[i]==='da dang')return 'đã đăng'}
   return /(^|[\/_ ])(ai)([\/_. ]|$)/i.test(path)?'đã dựng':'thô'}
 function guessProd(path){
-  var parts=path.split('/'),folders=parts.slice(0,-1),ks=knownProds(),i;
-  for(i=folders.length-1;i>=0;i--){var nf=norm(folders[i].trim()),hit=ks.filter(function(k){return norm(k)===nf})[0];if(hit)return hit}
+  var parts=path.split('/'),folders=parts.slice(0,-1),ks=PRODUCTS.map(function(p){return p.name}),i;
+  for(i=folders.length-1;i>=0;i--){var hit=findProduct(folders[i]);if(hit)return hit.name}
   for(i=folders.length-1;i>=0;i--){var f=folders[i].trim();if(f&&/\p{L}/u.test(f)&&!isStatusDir(f))return f}
   var best='',bs=0,nt=toks(parts[parts.length-1]);
   ks.forEach(function(k){var weak=['lich','tranh','bang','treo'],n=toks(k).filter(function(w){return weak.indexOf(w)<0&&nt.indexOf(w)>=0}).length;if(n>bs){bs=n;best=k}});
@@ -74,7 +75,7 @@ async function srcInit(){
 function srcReset(){
   stopBeat();clearInterval(SRCF.roT);SRCF.roT=null;clearTimeout(SRCF.saveT);SRCF.saveT=null;
   Object.keys(LIB).forEach(function(k){if(LIB[k].url)URL.revokeObjectURL(LIB[k].url)});
-  LIB={};SEGS=[];SRCF.deleted=[];SRCF.open=false;SRCF.ro=false;SRCF.broken='';SRCF.err='';SRCF.dirty=false;SRCF.savedAt=0;dropRefs();
+  LIB={};SEGS=[];SRCF.deleted=[];PRODUCTS=[];PRULES=[];MERGESKIP=[];SRCF.newer=0;SRCF.extra={};S.sel={};S.undo=null;SRCF.open=false;SRCF.ro=false;SRCF.broken='';SRCF.err='';SRCF.dirty=false;SRCF.savedAt=0;dropRefs();
 }
 async function srcPick(){
   if(!SRCF.ok){msg('Trình duyệt này không chọn được thư mục trên máy. Hãy dùng Chrome hoặc Edge trên máy tính.');return}
@@ -143,10 +144,21 @@ async function loadState(){
       (names.length?' (đã đổi tên thành '+names.join(', ')+')':'')+'. Tool không tự ghi dữ liệu mới để tránh mất dữ liệu cũ. Nếu chắc muốn bắt đầu lại, bấm "Bắt đầu dữ liệu mới".';
     use={library:[],deleted:[]};
   }
+  var v=+use.version||1;SRCF.newer=v>STATE_VER?v:0;SRCF.extra={};
+  for(var k in use)if(['version','savedAt','library','deleted','products','rules','mergeSkip'].indexOf(k)<0)SRCF.extra[k]=use[k];
   LIB={};(use.library||[]).forEach(function(o){if(o&&o.id&&o.path){var r=fromRec(o);LIB[r.id]=r}});
   SRCF.deleted=[];(Array.isArray(use.deleted)?use.deleted:[]).forEach(function(id){id=String(id);if(!isDel(id))SRCF.deleted.push(id)});
-  if(note&&!SRCF.ro){SRCF.dirty=true;SRCF.ver++}
+  catalogFromState(use);
+  if(v<2){migrateV1();if(!note)note='Đã chuyển dữ liệu thư viện sang định dạng mới (version 2), dữ liệu cũ giữ nguyên.'}
+  Object.keys(LIB).forEach(function(k){var r=LIB[k];if(r.p)r.p=ensureProduct(r.p,true);else{r.manual=false;r.guess=false}}); // auto=true: không đổi cờ của sản phẩm đã có
+  if(note&&!SRCF.ro&&!SRCF.newer){SRCF.dirty=true;SRCF.ver++}
   return note;
+}
+/* version 1 chưa có danh mục và cờ nhãn: lập danh mục từ các sản phẩm đang dùng.
+   Nhãn trùng với kết quả đoán hiện nay thì coi là "đoán", khác thì coi là người dùng đã gõ tay. */
+function migrateV1(){
+  Object.keys(LIB).forEach(function(k){if(LIB[k].p)ensureProduct(LIB[k].p)});
+  Object.keys(LIB).forEach(function(k){var r=LIB[k];if(!r.p)return;var g=guessProd(r.path);r.guess=!!g&&canonicalProduct(g)===r.p;r.manual=!r.guess;if(r.guess)findProduct(r.p).auto=true});
 }
 function srcFresh(){if(!SRCF.broken)return;if(!confirm('Bắt đầu dữ liệu thư viện mới cho thư mục này? Các file state.corrupt-*.json vẫn được giữ lại trong .xuongclip.'))return;SRCF.broken='';markDirty();render()}
 
@@ -182,22 +194,23 @@ async function srcScan(note){
           var old=byPath[x.it.path],moved=false;
           if(!old||seen[old.id]||LIB[old.id]!==old){old=bySig[x.f.name+'|'+x.f.size+'|'+x.f.lastModified];moved=true;if(old&&(foundPath[old.path]||seen[old.id]||LIB[old.id]!==old))old=null}
           r={id:x.id,path:x.it.path,size:x.f.size,mtime:x.f.lastModified,label:baseLabel(x.it.path),p:'',o:'thô',dx:0,d:5,desc:'',tags:[]};
-          if(old){r.label=old.label;r.p=old.p;r.o=old.o;if(moved){r.dx=old.dx;r.d=old.d;r.desc=old.desc;r.tags=old.tags}
+          if(old){r.label=old.label;r.p=old.p;r.o=old.o;r.manual=old.manual;r.guess=old.guess;if(moved){r.dx=old.dx;r.d=old.d;r.desc=old.desc;r.tags=old.tags}
             if(old.url)URL.revokeObjectURL(old.url);delete LIB[old.id];seen[old.id]=1;var di=SRCF.deleted.indexOf(old.id);if(di>=0)SRCF.deleted[di]=x.id}
-          else{r.p=guessProd(x.it.path);r.o=guessO(x.it.path);nNew++}
+          else{labelAuto(r);r.o=guessO(x.it.path);nNew++}
           LIB[r.id]=r;changed=true;
         }
         r.path=x.it.path;r.fh=x.it.fh;r.missing=false;if(!r.url)r.url=URL.createObjectURL(x.f);seen[r.id]=1;
       });
       SRCF.scan.done=Math.min(found.length,i+25);renderSrcBar();
     }
+    if(applyRulesAll())changed=true; // quy tắc chỉ áp cho video chưa gắn nhãn tay
     Object.keys(LIB).forEach(function(k){var r=LIB[k];if(!seen[k]){r.missing=true;r.fh=null;if(r.url){URL.revokeObjectURL(r.url);r.url=null}}});
     var need=Object.keys(LIB).map(function(k){return LIB[k]}).filter(function(r){return !r.missing&&!r.dx&&!isDel(r.id)});
     if(need.length){SRCF.scan={t:'Đang đọc thời lượng video',done:0,total:need.length};renderSrcBar();
       await pool(need,4,async function(r){var d=await vidMeta(r.url);if(d){r.dx=d;r.d=Math.max(1,Math.round(d));changed=true}else r.bad=true;SRCF.scan.done++;renderSrcBar()})}
     SRCF.scan=null;rebuildSegs();
     var nm=SEGS.filter(function(x){return x.missing}).length;
-    if(changed)markDirty();
+    if(changed||SRCF.dirty)markDirty(); // dirty có sẵn: dữ liệu vừa chuyển version hoặc lấy từ bản dự phòng
     msg((note?note+' ':'')+'Đã quét "'+SRCF.name+'": '+SEGS.filter(function(x){return !x.missing}).length+' video'+(nNew?', '+nNew+' video mới':'')+(nm?', '+nm+' thẻ mất file':'')+'.');
   }catch(e){SRCF.scan=null;rebuildSegs();if(isPermErr(e))permLost();else{SRCF.err='Lỗi khi quét thư mục: '+errTxt(e);render()}}
 }
@@ -216,8 +229,8 @@ async function segRestore(id){
   rebuildSegs();markDirty();render()}
 
 /* ---------- tự lưu ---------- */
-function markDirty(){SRCF.dirty=true;SRCF.ver++;clearTimeout(SRCF.saveT);SRCF.saveT=setTimeout(srcSave,1500);updSaveSt()}
-function canWrite(){return !!(SRCF.h&&SRCF.open&&!SRCF.ro&&!SRCF.broken&&SRCF.perm==='granted')}
+function markDirty(){pruneAuto();SRCF.dirty=true;SRCF.ver++;clearTimeout(SRCF.saveT);SRCF.saveT=setTimeout(srcSave,1500);updSaveSt()}
+function canWrite(){return !!(SRCF.h&&SRCF.open&&!SRCF.ro&&!SRCF.broken&&!SRCF.newer&&SRCF.perm==='granted')}
 async function srcSave(){
   clearTimeout(SRCF.saveT);SRCF.saveT=null;
   if(!SRCF.dirty||!canWrite())return;
@@ -246,6 +259,7 @@ function saveStatus(){
   if(!SRCF.h)return '';
   if(SRCF.ro)return 'Chỉ đọc: thư mục đang mở ở nơi khác, thay đổi ở tab này không được lưu.';
   if(SRCF.broken)return 'Không ghi: dữ liệu cũ bị hỏng, xem thông báo phía trên.';
+  if(SRCF.newer)return 'Không ghi: dữ liệu do bản tool mới hơn tạo, xem thông báo phía trên.';
   if(SRCF.perm!=='granted')return SRCF.dirty?'Chưa có quyền ghi. Thay đổi đang giữ trong bộ nhớ, sẽ ghi khi cấp lại quyền.':'Chưa có quyền đọc thư mục.';
   if(SRCF.saving)return 'Đang lưu vào .xuongclip/state.json...';
   if(SRCF.dirty)return 'Có thay đổi, sẽ tự lưu sau 1,5 giây.';
@@ -258,6 +272,7 @@ function renderSrcBar(){
   if(!SRCF.ok)h+='<div class="w bad">Trình duyệt này không đọc được thư mục trên máy, nên thư viện source không dùng được. Hãy mở tool bằng Chrome hoặc Edge trên máy tính.</div>';
   else if(SRCF.h&&SRCF.perm&&SRCF.perm!=='granted')h+='<div class="w bad srcw">'+(SRCF.open?'Tool vừa mất quyền với thư mục "'+nm+'". Thay đổi vẫn giữ trong bộ nhớ.':'Thư mục source "'+nm+'" cần được cấp quyền lại sau khi mở tool.')+' <button class="btn sm pri" data-act="srcgrant">Bấm để cấp quyền lại cho thư mục "'+nm+'"</button></div>';
   if(SRCF.ro)h+='<div class="w bad srcw">Thư mục "'+nm+'" đang được mở ở tab hoặc máy khác (cập nhật lúc '+clock(SRCF.roAt)+'). Tab này chỉ đọc, mọi thay đổi ở đây không được lưu. Đóng nơi kia rồi bấm kiểm tra lại (khóa tự hết hạn sau 2 phút không cập nhật). <button class="btn sm" data-act="srccheck">Kiểm tra lại</button></div>';
+  if(SRCF.newer)h+='<div class="w bad">Dữ liệu trong .xuongclip/state.json được tạo bởi bản tool mới hơn (version '+SRCF.newer+', bản này hiểu tới version '+STATE_VER+'). Bản này chỉ đọc và không ghi gì để tránh làm mất dữ liệu. Hãy cập nhật tool: mở đúng địa chỉ bản mới hoặc tải lại trang (Ctrl+F5).</div>';
   if(SRCF.broken)h+='<div class="w bad srcw">'+esc(SRCF.broken)+' <button class="btn sm" data-act="srcfresh">Bắt đầu dữ liệu mới</button></div>';
   if(SRCF.err)h+='<div class="w bad">'+esc(SRCF.err)+'</div>';
   if(SRCF.scan){var sc=SRCF.scan;h+='<div class="w ok scanw">'+esc(sc.t)+(sc.total?': '+sc.done+'/'+sc.total:'')+'...'+(sc.total&&sc.t!=='Đang tìm video trong thư mục'?'<progress max="'+sc.total+'" value="'+sc.done+'"></progress>':'')+'</div>'}
@@ -281,6 +296,6 @@ function makeThumb(r){return new Promise(function(res){
   to=setTimeout(fin,15000);v.preload='metadata';v.muted=true;v.playsInline=true;
   v.onloadedmetadata=function(){if(!r.dx&&isFinite(v.duration)&&v.duration){r.dx=v.duration;r.d=Math.max(1,Math.round(v.duration));markDirty()}try{v.currentTime=Math.min(1,(v.duration||2)/2)}catch(x){fin()}};
   v.onseeked=function(){try{var cv=document.createElement('canvas');cv.width=180;cv.height=Math.round(180*(v.videoHeight||16)/(v.videoWidth||9));cv.getContext('2d').drawImage(v,0,0,cv.width,cv.height);r.thumb=cv.toDataURL('image/jpeg',0.6);
-    document.querySelectorAll('[data-th="'+r.id+'"]').forEach(function(el){el.style.backgroundImage='url('+r.thumb+')';el.textContent=''})}catch(x){}fin()};
+    document.querySelectorAll('[data-th="'+r.id+'"]').forEach(function(el){el.style.backgroundImage='url('+r.thumb+')';el.querySelectorAll('.thtx').forEach(function(t){t.textContent=''})})}catch(x){}fin()};
   v.onerror=function(){r.bad=true;fin()};
   if(!r.url){fin();return}v.src=r.url})}
