@@ -24,6 +24,8 @@ js/
   wave.js           Sóng âm giọng đọc, vạch chia dòng
   export.js         Xuất video MP4 (WebCodecs + mp4-muxer), ảnh bìa, lưu file
   ui.js             Giao diện các tab, xem trước, điều hướng
+  editor.js         Màn Ghép clip kiểu phòng dựng: thanh trên, thư viện, danh sách dòng, Inspector
+  tl.js             Thanh thời gian nhiều tầng (Video, Giọng, Chữ, Nhạc), kéo thả, phím tắt
   kbview.js         Tab Kịch bản: nạp theo đợt, trùng mã, lưu trữ đợt, xóa mềm
   libview.js        Tab Thư viện (lọc, chọn nhiều, gắn hàng loạt, hoàn tác) và phần danh mục / quy tắc ở Cài đặt
   events.js         Bắt sự kiện click / nhập / kéo thả
@@ -76,6 +78,12 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
 - Luật hình thức: tổng thời lượng 45–60 giây (LỖI), mỗi dòng 6–9 giây (CẢNH BÁO), chữ số trong lời (CẢNH BÁO), cụm chữ hiện không có trong lời (LỖI), dòng cuối thiếu "giỏ hàng" (CẢNH BÁO), dòng chưa có cảnh / clip chưa có giọng (LỖI), chữ hiện ra ngoài vùng an toàn (CẢNH BÁO). Ngưỡng và bật/tắt ở Cài đặt.
 - Vùng an toàn TikTok: trên 8%, dưới 22%, phải 14%, trái 4% — **số ước lượng, chưa kiểm chứng**.
 - Còn LỖI thì nút Xuất bị khóa; chỉ còn CẢNH BÁO thì hỏi xác nhận. CẢNH BÁO bỏ qua được cho từng clip, LỖI thì không.
+
+## Giao diện phòng dựng
+
+- Nền tối, toàn bộ màu là biến CSS ở đầu `css/style.css` (`--bg`, `--panel`, `--line`, `--fg`, `--muted`, `--accent`, `--ok`, `--warn`, `--err`).
+- Màn Ghép clip: thanh trên (chọn clip, đèn trạng thái, tổng thời lượng, Kiểm tra, Xuất), thư viện bên trái và Inspector bên phải thu gọn được (nhớ trạng thái), khung xem thử 9:16, danh sách dòng mỗi dòng một hàng, thanh thời gian nhiều tầng ở dưới, nút Toàn màn hình.
+- Phím tắt trên màn Ghép clip (không bắt khi đang gõ): Space phát/dừng, ← → một khung hình (Shift: 1 giây), [ ] dòng trước/sau, I / O điểm đầu/cuối đoạn video tại kim chạy, ? bảng phím tắt.
 
 ## Mở thử
 

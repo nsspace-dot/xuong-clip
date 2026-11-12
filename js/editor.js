@@ -11,6 +11,8 @@ function lineLvl(c,i){var r=checkClip(c),e=r.errs.filter(function(x){return x.i=
   return r.warns.some(function(x){return x.i===i})?'warn':'ok'}
 var LVLTXT={err:'Có lỗi',miss:'Thiếu cảnh',warn:'Có cảnh báo',ok:'Sẵn sàng'};
 function lineDot(c,i){var l=lineLvl(c,i);return '<span class="dot '+l+'" title="'+LVLTXT[l]+'"></span>'}
+function edOpts(){return '<div class="vopts">'+safeToggle()+'<label class="note"><input type="checkbox" id="edtxt" '+(S.edTxt!==false?'checked':'')+'> Chỉnh chữ</label>'+
+  '<label class="note"><input type="checkbox" id="tts" '+(S.tts?'checked':'')+'> Đọc thử bằng giọng trình duyệt</label></div>'}
 function chkSum(c){var r=checkClip(c);return '<span class="k">Kiểm tra</span><span class="cnt err">'+r.errs.length+' lỗi</span><span class="cnt warn">'+r.warns.length+' cảnh báo</span>'}
 
 /* ---------- các mảnh ---------- */
@@ -85,8 +87,7 @@ function vGhep(){
    '<section class="ectr"><div class="eview">'+
     '<div class="phone" id="phone"><video id="pv" class="pv" muted playsinline hidden></video><div id="sc"></div><div id="tr"></div><div id="inf"></div>'+safeOverlay()+'</div>'+
     '<div class="ctrl"><button class="btn sm pri" data-act="play">'+(S.play?'Dừng':'Phát')+'</button><input type="range" id="scrub" min="0" max="'+tot+'" step="0.1" value="'+S.t+'" aria-label="Thanh thời gian"><span class="t tc" id="tt"></span></div>'+
-    '<div class="vopts">'+safeToggle()+'<label class="note"><input type="checkbox" id="edtxt" '+(S.edTxt!==false?'checked':'')+'> Chế độ chỉnh chữ</label>'+
-    '<label class="note"><input type="checkbox" id="tts" '+(S.tts?'checked':'')+'> Đọc thử bằng giọng trình duyệt</label></div></div>'+
+    '</div>'+
    '<div class="elist"><div class="lhd"><b>Dòng thoại</b><span class="meta">'+c.lines.length+' dòng · bấm để mở chi tiết</span></div>'+edRows(c)+
     '<div class="trbox"><label class="lab" for="trtype">Chuyển cảnh mặc định</label><select id="trtype">'+Object.keys(TRN).map(function(k){return '<option value="'+k+'" '+(TR.type===k?'selected':'')+'>'+TRN[k]+'</option>'}).join('')+'</select> <input type="number" id="trdur" min="0.1" max="1" step="0.1" value="'+TR.dur+'" aria-label="Thời gian chuyển cảnh"> giây</div></div>'+
    '</section>'+edInspector(c)+'</div>'+

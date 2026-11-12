@@ -372,3 +372,74 @@ td .dot{margin-right:6px}
 @media (max-width:1500px){.egrid{grid-template-columns:250px minmax(0,1fr) 360px}.pl-off .egrid{grid-template-columns:34px minmax(0,1fr) 360px}}
 @media (min-width:1700px){.ectr{grid-template-columns:330px minmax(0,1fr)}.ectr .phone{max-width:310px}.egrid{grid-template-columns:270px minmax(0,1fr) 420px}.pl-off .egrid{grid-template-columns:34px minmax(0,1fr) 420px}}
 .lrow{grid-template-columns:22px 10px minmax(0,1fr) 78px 46px 58px}.lrow .lerr{justify-self:end}
+
+/* ================= Bước 5b: thanh thời gian nhiều tầng ================= */
+.tl{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.tlbar{display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid var(--line);font-size:12.5px}
+.tlbar .tc{font-family:var(--mono);font-size:13px;color:var(--accent);min-width:64px}
+.tlbar .sp{flex:1}
+.tlbody{display:grid;grid-template-columns:64px minmax(0,1fr)}
+.tlheads{border-right:1px solid var(--line);background:var(--panel2)}
+.tlhd{display:flex;align-items:center;padding:0 8px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--line)}
+.tlhd.off{opacity:.45}
+.tlsc{overflow-x:auto;overflow-y:hidden;position:relative}
+.tlin{position:relative;min-width:100%;cursor:crosshair;user-select:none;touch-action:none}
+.tlsel{position:absolute;top:0;bottom:0;background:var(--accent-soft);opacity:.55;pointer-events:none}
+.tlr{position:relative;border-bottom:1px solid var(--line)}
+.tlr .tk{position:absolute;top:12px;height:10px;border-left:1px solid var(--line)}
+.tlr .tk.b{top:0;height:22px;border-left-color:var(--muted);padding-left:3px;font-family:var(--mono);font-size:10px;color:var(--muted);line-height:14px;white-space:nowrap}
+.tlt{position:absolute;left:0;right:0;border-top:1px solid var(--line)}
+.tlv{position:absolute;top:4px;bottom:4px;border-radius:5px;background-color:#2b3036;background-repeat:no-repeat;border:1px solid #3a4048;overflow:hidden;cursor:pointer}
+.tlv.cur{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.tlv.miss{background:repeating-linear-gradient(45deg,var(--err-soft),var(--err-soft) 6px,#2a1714 6px,#2a1714 12px);border-color:var(--err)}
+.tlv.lv-err{box-shadow:inset 0 -3px 0 var(--err)}.tlv.cur.lv-err{box-shadow:0 0 0 1px var(--accent),inset 0 -3px 0 var(--err)}
+.tlvl{position:absolute;left:4px;top:2px;font-size:10.5px;font-family:var(--mono);background:rgba(0,0,0,.65);color:#fff;padding:0 4px;border-radius:3px;pointer-events:none;white-space:nowrap}
+.tlv.miss .tlvl{color:var(--err)}
+.hd{position:absolute;top:0;bottom:0;width:8px;cursor:ew-resize;z-index:2}
+.hd.l{left:0;background:linear-gradient(90deg,rgba(245,165,36,.85),transparent)}.hd.r{right:0;background:linear-gradient(270deg,rgba(245,165,36,.85),transparent)}
+.tlv:not(.cur) .hd{opacity:.35}.tlv .hd:hover{opacity:1}
+.voice canvas{position:absolute;left:0;top:0;pointer-events:none}
+.tlb{position:absolute;top:0;bottom:0;width:9px;cursor:ew-resize;z-index:3}
+.tlb::after{content:"";position:absolute;left:4px;top:0;bottom:0;width:2px;background:var(--info)}
+.tlb:hover::after{background:var(--accent);width:3px}
+.tlcut{position:absolute;bottom:2px;height:14px;background:var(--err);color:#fff;font-size:9.5px;font-weight:700;line-height:14px;padding:0 3px;border-radius:3px;overflow:hidden;white-space:nowrap;z-index:2}
+.tlnone{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:11.5px;color:var(--muted);white-space:nowrap}
+.music{opacity:.5}
+.tlx{position:absolute;height:13px;line-height:13px;font-size:10px;padding:0 4px;border-radius:3px;background:var(--info-soft);color:var(--info);border:1px solid #2c4c6e;white-space:nowrap;overflow:hidden;cursor:grab}
+.tlx.cur{background:#3a2a0c;color:var(--accent);border-color:var(--accent)}
+.tlx .hd.r{width:6px;background:rgba(124,184,255,.6)}
+.tlph{position:absolute;top:0;bottom:0;width:0;border-left:2px solid var(--accent);pointer-events:none;z-index:5}
+.tlph span{position:absolute;top:0;left:-6px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:8px solid var(--accent)}
+.tlkeys{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:90;display:flex;align-items:center;justify-content:center}
+.tlkb{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:380px;box-shadow:0 20px 50px rgba(0,0,0,.6)}
+.tlkb table{min-width:0;margin:8px 0}.tlkb td{padding:5px 10px;border-bottom:1px solid var(--line)}
+kbd{font-family:var(--mono);background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:12px;white-space:nowrap}
+.ed5.fs .ebot{margin-top:10px}
+
+/* Màn Ghép vừa khít chiều cao cửa sổ: thanh thời gian luôn thấy ở dưới, các cột tự cuộn bên trong */
+.ed5{--tlh:228px}
+.ed5 .egrid{height:calc(100vh - 112px - var(--tlh));min-height:400px;align-items:stretch}
+.ed5 .pnl{position:static;max-height:none;height:100%}
+.ed5 .ectr{height:100%;grid-template-columns:auto minmax(0,1fr)}
+.ed5 .eview{position:static;height:100%;display:flex;flex-direction:column;min-height:0}
+.ed5 .ectr .phone{height:calc(100% - 74px);width:auto;max-width:380px;aspect-ratio:9/16;margin:0;flex:none}
+.ed5 .ctrl{margin-top:6px}
+.ed5 .vopts{display:flex;flex-wrap:wrap;gap:2px 10px;margin-top:4px;font-size:11.5px;max-width:100%}
+.ed5 .vopts .note{display:inline-flex!important;gap:4px;align-items:center;white-space:nowrap}
+.ed5 .vopts .note .meta{display:none}
+.ed5 .elist{height:100%;display:flex;flex-direction:column}
+.ed5 .lrows{overflow:auto;flex:1;min-height:0}
+.ed5 .ebot{margin-top:8px}
+.ed5.fs .egrid{height:calc(100vh - 70px - var(--tlh))}
+.ed5.fs .ectr{grid-template-columns:auto minmax(0,1fr)}.ed5.fs .ectr .phone{max-width:none}
+.ed5{--tlh:246px}
+.ed5 .ectr{align-items:stretch;grid-template-rows:minmax(0,1fr)}
+.ed5 .eview{overflow:hidden}
+.ed5 .ectr .phone{max-height:calc(100% - 74px)}
+.ed5 .egrid{grid-template-rows:minmax(0,1fr)}.ed5 .egrid>*{min-height:0}
+.ed5 .eview{align-items:center}.ed5 .eview .ctrl,.ed5 .eview .vopts{align-self:stretch}
+.ed5 .vopts{flex-direction:column;align-items:flex-start;flex-wrap:nowrap;align-self:center}
+.tlbar .vopts{display:flex!important;flex-direction:row!important;gap:2px 12px;margin:0 0 0 10px;font-size:12px}
+.tlbar .vopts .note{display:inline-flex!important;gap:4px;align-items:center;white-space:nowrap;color:var(--muted)}
+.tlbar .vopts .note .meta{display:inline;font-size:11px}
+.ed5 .ectr .phone{height:calc(100% - 44px);max-height:calc(100% - 44px)}
