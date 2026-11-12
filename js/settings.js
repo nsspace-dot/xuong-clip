@@ -18,3 +18,7 @@ try{var pp0=JSON.parse(localStorage.getItem('xuongclip_people')||'null');if(Arra
 function savePeople(){try{localStorage.setItem('xuongclip_people',JSON.stringify(PEOPLE))}catch(e){}}
 function person(name){var n=norm(String(name||'').trim());if(!n)return null;return PEOPLE.filter(function(p){return norm(p.name.trim())===n})[0]||null}
 function isDirect(c){var p=person(c&&c.who);return !!(p&&p.direct)}
+/* Gợi ý cảnh: ngưỡng điểm tối thiểu, có cho gợi ý video nhãn "đoán" hay không (mặc định không). */
+var SG={min:40,allowGuess:false};
+try{var sg0=JSON.parse(localStorage.getItem('xuongclip_sg')||'null');if(sg0){if(isFinite(+sg0.min))SG.min=Math.max(10,Math.min(95,+sg0.min));SG.allowGuess=!!sg0.allowGuess}}catch(e){}
+function saveSG(){try{localStorage.setItem('xuongclip_sg',JSON.stringify(SG))}catch(e){}}

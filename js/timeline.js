@@ -25,7 +25,6 @@ function timeline(c){var tot;
   if(manualDur(c)){var u=0;c.lines.forEach(function(l){var len=l.dm>0?l.dm:(l.ae-l.as);l.s=u;l.e=u+len;u=l.e;l.sc=Math.max(0.2,len/dur(l))});return u}
   return tot}
 function cue(l,inf){if(!inf.ph)return null;var i=l.t.toLowerCase().indexOf(inf.ph.toLowerCase());if(i<0)return null;return l.s+Math.min(wc(l.t.slice(0,i))/3.6*(l.sc||1),Math.max(0,(l.e-l.s)-1))}
-function usedElsewhere(sid,c){return CLIPS.filter(function(x){return x.id!==c.id&&x.g===c.g&&x.lines.some(function(l){return l.seg===sid})}).map(function(x){return x.id})}
 function infosStr(l){return l.infos.map(function(x){return x.ph+'='+x.x}).join('; ')}
 function parseInfos(s){return s.split(';').map(trim).filter(Boolean).map(function(a){var i=a.indexOf('=');return i<0?{ph:a,x:a}:{ph:a.slice(0,i).trim(),x:a.slice(i+1).trim()}})}
 function parse(txt){

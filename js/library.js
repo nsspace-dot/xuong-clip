@@ -48,7 +48,7 @@ function trackHTML(c,l,i,sg){if(!sg.url)return '';
    (short?'<div class="meta" style="color:#b45309">Source chạy hết sau '+fmt1(wl/(l.spd||1))+'s, dòng dài '+fmt1(l.e-l.s)+'s (tốc độ source không làm đổi giọng). Phần còn lại: <select data-fill="'+i+'"><option value="loop" '+((l.fill==='hold'||l.fill==='slow')?'':'selected')+'>Lặp lại đoạn</option><option value="hold" '+((l.fill==='hold'||l.fill==='slow')?'selected':'')+'>Giữ khung cuối</option></select></div>':'')+'</div>'}
 function tlText(a0,wl,d,need){return 'Lấy từ giây '+a0.toFixed(1)+' đến '+(a0+wl).toFixed(1)+' ('+wl.toFixed(1)+'s) trong video dài '+d.toFixed(1)+'s · dòng cần '+need.toFixed(1)+'s. Kéo khung vàng để chọn đoạn.'}
 function trkApply(c,l,sg,i,a){var d=sdur(sg),need=Math.max(0.1,(l.e-l.s)*(l.spd||1)),wl=l.segOut?Math.max(0.2,l.segOut-(l.segIn||0)):Math.min(need,d);
-  a=Math.max(0,Math.min(a,d-wl));a=Math.round(a*10)/10;l.segIn=a;if(l.segOut)l.segOut=Math.round((a+wl)*10)/10;
+  a=Math.max(0,Math.min(a,d-wl));a=Math.round(a*10)/10;if(l.segIn!==a)lockLine(l);l.segIn=a;if(l.segOut)l.segOut=Math.round((a+wl)*10)/10;
   var w=document.querySelector('.trk[data-trk^="'+i+'|"] .win');if(w){w.style.left=(a/d*100)+'%';w.style.width=Math.min(100,wl/d*100)+'%'}
   var m=document.querySelector('[data-tl="'+i+'"]');if(m)m.textContent=tlText(a,wl,d,need);
   var qi=document.querySelector('[data-sin="'+i+'"]'),qo=document.querySelector('[data-sout="'+i+'"]');if(qi)qi.value=a.toFixed(1);if(qo)qo.value=(a+wl).toFixed(1);
@@ -60,7 +60,7 @@ function ensureStrip(sg){if(!sg||!sg.url||sg.strip||sg.stripBusy||sg.bad)return;
     sg.strip=cv.toDataURL('image/jpeg',0.6);
     document.querySelectorAll('.trk').forEach(function(e){if(e.dataset.trk.split('|')[1]===sg.id)e.style.backgroundImage='url('+sg.strip+')'})
   }).catch(function(){}).then(function(){sg.stripBusy=0})}
-function applySeg(cid,li,sid,inn,out){var c=clip(cid);if(!c)return;var l=c.lines[li];l.seg=sid;l.segIn=inn||0;l.segOut=out||null;l.choose=false;closePV();msg('Đã chọn đoạn "'+seg(sid).label+'"'+(inn||out?' (giây '+(inn||0)+' đến '+(out||seg(sid).d)+')':'')+' cho '+cid+', dòng '+(li+1)+'.')}
+function applySeg(cid,li,sid,inn,out){var c=clip(cid);if(!c)return;var l=c.lines[li];l.seg=sid;lockLine(l);l.segIn=inn||0;l.segOut=out||null;l.choose=false;closePV();msg('Đã chọn đoạn "'+seg(sid).label+'"'+(inn||out?' (giây '+(inn||0)+' đến '+(out||seg(sid).d)+')':'')+' cho '+cid+', dòng '+(li+1)+'.')}
 function closePV(){var el=document.getElementById('pvm');if(el){var v=document.getElementById('pvv');if(v)try{v.pause()}catch(e){}el.remove()}S.pv=null}
 function updPV(){var e=document.getElementById('pvt');if(e&&S.pv)e.textContent='Đầu: '+(S.pv.inn||0)+'s · Cuối: '+(S.pv.out||'hết video')+(S.pv.out?'s':'')}
 function openPV(sid,cid,li){
