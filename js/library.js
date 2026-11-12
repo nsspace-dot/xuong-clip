@@ -17,10 +17,24 @@ function tagSeg(sg){
     var tg=(o.doan||[]).map(function(x){return {a:Math.max(0,+x.tu||0),b:Math.min(d,+x.den||d),d:String(x.mo_ta||'')}}).filter(function(x){return x.d&&x.b>x.a});
     sg.desc=String(o.mo_ta||'');sg.tags=tg;saveSeg(sg);return tg.length});
 }
-function tagMany(list){var say=function(m){var e=document.getElementById('tagst');if(e)e.textContent=m},i=0,ok=0,errs=[];
-  (function next(){if(i>=list.length){msg('AI đã gắn tag cho '+ok+'/'+list.length+' video.'+(errs.length?' Lỗi: '+errs[0]:''));return}
-    var sg=list[i++];say('Đang đọc video '+i+'/'+list.length+': '+sg.label);
-    tagSeg(sg).then(function(){ok++}).catch(function(e){errs.push((e&&e.message)||String(e))}).then(function(){if(errs.length&&/HTTP (400|401|403|404)|API key/.test(errs[errs.length-1])){msg('Dừng vì lỗi: '+errs[errs.length-1]+' (nếu báo không tìm thấy model, vào Cài đặt đổi tên model đọc video)');return}next()})})()}
+function apiHint(m){
+  if(/HTTP 401|HTTP 403/.test(m))return 'API key sai, hết hạn hoặc không có quyền dùng model này. Kiểm tra key ở tab Cài đặt.';
+  if(/HTTP 404/.test(m))return 'Không tìm thấy model đọc video. Vào Cài đặt kiểm tra tên model.';
+  if(/HTTP 400/.test(m))return 'Yêu cầu bị từ chối (thường do API key không hợp lệ hoặc tên model sai).';
+  if(/API key/.test(m))return 'Chưa có API key, vào tab Cài đặt để dán key.';return ''}
+function tagMany(list){
+  if(S.tagging){msg('AI đang gắn tag, đợi xong hoặc bấm Dừng AI.');return}
+  var say=function(m){var e=document.getElementById('tagst');if(e)e.textContent=m},i=0,ok=0,errs=[];
+  S.tagging=true;S.tagStop=false;render();
+  var end=function(m){S.tagging=false;S.tagStop=false;msg(m)};
+  (function next(){
+    if(S.tagStop){end('Đã dừng AI gắn tag: xong '+ok+'/'+list.length+' video.');return}
+    if(i>=list.length){end('AI đã gắn tag cho '+ok+'/'+list.length+' video.'+(errs.length?' '+errs.length+' video lỗi, ví dụ: '+errs[0]:''));return}
+    var sg=list[i++];say('AI đang gắn tag '+i+'/'+list.length+': '+sg.label+(ok||errs.length?' (xong '+ok+', lỗi '+errs.length+')':''));
+    tagSeg(sg).then(function(){ok++}).catch(function(e){errs.push((e&&e.message)||String(e))}).then(function(){
+      var last=errs[errs.length-1]||'';
+      if(errs.length&&/HTTP (400|401|403|404)|API key/.test(last)){end('Dừng AI gắn tag vì lỗi: '+apiHint(last)+' Chi tiết: '+last.slice(0,200)+' (đã xong '+ok+'/'+list.length+')');return}
+      next()})})()}
 function idbOpen(){return new Promise(function(res,rej){var r=indexedDB.open('xuongclip',1);r.onupgradeneeded=function(){r.result.createObjectStore('kv')};r.onsuccess=function(){res(r.result)};r.onerror=function(){rej(r.error)}})}
 function idbSet(k,v){return idbOpen().then(function(db){return new Promise(function(res,rej){var tx=db.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);tx.oncomplete=res;tx.onerror=function(){rej(tx.error)}})})}
 function idbGet(k){return idbOpen().then(function(db){return new Promise(function(res,rej){var q=db.transaction('kv').objectStore('kv').get(k);q.onsuccess=function(){res(q.result)};q.onerror=function(){rej(q.error)}})})}

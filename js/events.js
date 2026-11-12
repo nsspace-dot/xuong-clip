@@ -7,17 +7,15 @@ document.addEventListener('click',function(e){
   if(d.delclip){CLIPS=CLIPS.filter(function(x){return x.id!==d.delclip});if(S.edit===d.delclip)S.edit=null;render();return}
   if(d.dl!==undefined){var ce=clip(S.edit);ce.lines.splice(+d.dl,1);ce.auto=false;render();return}
   if(d.auto){var cc=clip(d.auto);autoPick(cc);S.cur=cc.id;msg('Đã ghép cảnh cho '+cc.id+': '+cc.lines.filter(function(l){return l.seg}).length+'/'+cc.lines.length+' dòng có cảnh.');return}
-  if(d.lp){S.libP=d.lp;render();return} if(d.lo){S.libO=d.lo;render();return} if(d.eg){S.expG=d.eg;render();return}
+  if(d.eg){S.expG=d.eg;render();return}
   if(d.ch!==undefined){var l=c.lines[+d.ch];l.choose=!l.choose;render();return}
   if(d.pick){var p=d.pick.split('|'),ln=c.lines[+p[0]];ln.seg=p[1]==='none'?null:p[1];ln.segIn=0;ln.segOut=null;ln.fill=null;var pbt=ln.seg?bestTag(seg(ln.seg),ln):null;if(pbt)ln.segIn=Math.max(0,pbt.t.a);ln.choose=false;render();return}
   if(d.addinfo!==undefined){c.lines[+d.addinfo].infos.push({x:'Chữ mới',ph:''});render();return}
   if(d.useseg){var u=d.useseg.split('|'),uc=clip(u[0]);uc.lines[+u[1]].seg=u[2];uc.lines[+u[1]].segIn=0;uc.lines[+u[1]].segOut=null;msg('Đã gán cảnh "'+seg(u[2]).label+'" cho '+u[0]+', dòng '+(+u[1]+1)+'.');return}
-  if(d.delseg){segDelete(d.delseg);render();return}
+  if(d.delseg){delete S.sel[d.delseg];segDelete(d.delseg);render();return}
   if(d.delinfo!==undefined){var di=d.delinfo.split('|');c.lines[+di[0]].infos.splice(+di[1],1);render();return}
   if(d.act==='tag'){var tsg=seg(d.id);if(tsg)tagMany([tsg]);return}
-  if(d.act==='tagall'){var tl=SEGS.filter(function(x){return x.url&&!x.desc});if(!tl.length){msg('Mọi video đều đã có tag.');return}tagMany(tl);return}
   if(d.act==='covexp'){exportCover(c);return}
-  if(d.act==='bulk'){var bp=document.getElementById('bulkp').value.trim();if(bp){SEGS.forEach(function(x){if(x.url&&!x.p){x.p=bp;saveSeg(x)}});render()}return}
   if(d.delexp){EXP=EXP.filter(function(x){return x.id!==d.delexp});render();return}
   if(d.act==='load'){var ta=document.getElementById('paste');S.paste=ta.value;var out=parse(S.paste);
     if(!out.length){msg('Không đọc được clip nào. Mỗi clip cần một dòng bắt đầu bằng ##, xem mục Định dạng văn bản.');return}
@@ -87,7 +85,7 @@ document.addEventListener('change',function(e){
   if(t.id==='file'&&t.files[0]){var f=t.files[0];if(!/\.(txt|csv|md)$/i.test(f.name)){msg('Bản thô chưa đọc được file '+f.name+'. Hãy lưu thành .txt hoặc dán văn bản vào ô bên dưới.');return}
     var r=new FileReader();r.onload=function(){S.paste=String(r.result);msg('Đã đọc '+f.name+'. Kiểm tra nội dung trong ô rồi bấm Nạp vào danh sách.')};r.readAsText(f);return}
   if(d.sl){seg(d.sl).label=t.value;saveSeg(seg(d.sl));return}
-  if(d.sp){seg(d.sp).p=t.value.trim();saveSeg(seg(d.sp));render();return}
+  if(d.sp){setManualProd(seg(d.sp),t.value);saveSeg(seg(d.sp));render();return}
   if(d.gemg){GEM.byGian[d.gemg]=t.value;saveGem();render();return}
   if(d.q){EXPQ[d.q]=t.value;saveQ();return}
   if(d.info){INFO[d.info]=t.type==='number'?(+t.value||INFO[d.info]):t.value;saveInfo();render();return}
