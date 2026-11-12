@@ -146,6 +146,7 @@ async function loadState(){
       (names.length?' (đã đổi tên thành '+names.join(', ')+')':'')+'. Tool không tự ghi dữ liệu mới để tránh mất dữ liệu cũ. Nếu chắc muốn bắt đầu lại, bấm "Bắt đầu dữ liệu mới".';
     use={library:[],deleted:[]};
   }
+  SRCF.fileSavedAt=Date.parse(use.savedAt)||0; // giờ ghi gần nhất trong file, cho chỉ báo "Đã lưu" lúc vừa mở
   var v=+use.version||1;SRCF.newer=v>STATE_VER?v:0;SRCF.extra={};
   for(var k in use)if(['version','savedAt','library','deleted','products','rules','mergeSkip','clips','clipsArchived','clipsTrash','exported','info'].indexOf(k)<0)SRCF.extra[k]=use[k];
   LIB={};(use.library||[]).forEach(function(o){if(o&&o.id&&o.path){var r=fromRec(o);LIB[r.id]=r}});

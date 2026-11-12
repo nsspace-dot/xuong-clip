@@ -121,12 +121,18 @@ function lineLost(l){return !!(l&&l.seg&&!lineSeg(l))}
 function lostWhy(l){var s=seg(l.seg),r=LIB[l.seg];return !SRCF.open?'chưa mở thư mục source':s&&s.missing?'mất file video':r&&isDel(l.seg)?'thẻ video đã bị xóa khỏi thư viện':'không còn video này trong thư viện'}
 
 /* ---------- chỉ báo lưu trên đầu trang ---------- */
-function updSaveBadge(){var e=document.getElementById('savebadge');if(!e)return;var t='',k='';
-  if(!SRCF.h||!SRCF.open){t=CLIPS.length?'Chưa chọn thư mục: chưa lưu':'';k='warn'}
-  else if(SRCF.ro){t='Chỉ đọc: không lưu';k='bad'}
-  else if(SRCF.broken||SRCF.newer){t='Không lưu';k='bad'}
-  else if(SRCF.perm!=='granted'){t=SRCF.dirty?'Chưa lưu (mất quyền)':'';k='bad'}
-  else if(SRCF.saving)t='Đang lưu...';
-  else if(SRCF.dirty)t='Có thay đổi...';
-  else if(SRCF.savedAt){var d=new Date(SRCF.savedAt);t='Đã lưu '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
-  e.textContent=t;e.className='savebadge '+k;e.title=saveStatus()}
+function hhmm(t){var d=new Date(t);return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
+/* Luôn trả về một trạng thái (không bao giờ rỗng), theo thứ tự ưu tiên. */
+function saveBadgeState(){
+  if(!SRCF.ok)return ['Trình duyệt không hỗ trợ: không lưu','bad'];
+  if(!SRCF.h)return ['Chưa chọn thư mục: chưa lưu','warn'];
+  if(SRCF.perm&&SRCF.perm!=='granted')return ['Mất quyền thư mục: chưa lưu','bad'];
+  if(SRCF.ro)return ['Chỉ đọc: không lưu','bad'];
+  if(SRCF.broken||SRCF.newer)return ['Không lưu: xem cảnh báo','bad'];
+  if(!SRCF.open)return ['Đang mở thư mục...',''];
+  if(SRCF.saving||SRCF.dirty)return ['Đang lưu...',''];
+  if(SRCF.savedAt)return ['Đã lưu '+hhmm(SRCF.savedAt),'ok'];
+  if(SRCF.fileSavedAt)return ['Đã lưu '+hhmm(SRCF.fileSavedAt),'ok'];
+  return ['Đã lưu','ok']}
+function updSaveBadge(){var e=document.getElementById('savebadge');if(!e)return;var st=saveBadgeState();
+  e.textContent=st[0];e.className='savebadge'+(st[1]?' '+st[1]:'');e.title=SRCF.h?saveStatus():'Chọn thư mục source ở tab Thư viện source để tool tự lưu.'}
