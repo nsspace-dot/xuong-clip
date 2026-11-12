@@ -42,7 +42,7 @@ document.addEventListener('click',function(e){
   if(d.act==='cleardir'){S.dir=null;S.dirPerm=null;idbSet('dir',null).catch(function(){});render();return}
   if(d.act==='gem'){makeVoice(c);return}
   if(d.act==='align'){alignToSpeech(c,function(ok){msg(ok?'Đã căn lại cảnh theo giọng.':'Không đọc được file giọng để căn.')});return}
-  if(d.act==='export'){exportClip(c);return}
+  if(d.act==='export'){if(exportGuard(c))exportClip(c);return}
   if(d.act==='copyvo'){var vo=c.lines.map(function(l){return l.t}).join(' ');try{navigator.clipboard.writeText(vo).then(function(){msg('Đã sao chép lời thoại đọc liền của '+c.id+'.')},function(){msg('Trình duyệt không cho sao chép tự động. Hãy chọn và chép lời thoại trong các ô thoại.')})}catch(x){msg('Trình duyệt không cho sao chép tự động.')}return}
   if(d.wx!==undefined){S.wx=!S.wx;render();return}
   if(d.bn!==undefined){var bq=d.bn.split('|'),bk=+bq[0];setBound(c,bk,abounds(c)[bk]+(+bq[1]));S.wk=bk;render();return}
@@ -123,7 +123,6 @@ document.addEventListener('change',function(e){
   if(d.pdirect!==undefined){var pq=PEOPLE[+d.pdirect];if(pq){pq.direct=t.checked;savePeople()}render();return}
   if(t.id==='sgmin'){SG.min=Math.max(10,Math.min(95,Math.round(+t.value)||40));saveSG();render();return}
   if(t.id==='sgguess'){SG.allowGuess=t.checked;saveSG();return}
-  if(d.rule){RULES.filter(function(r){return r.id===d.rule})[0].on=t.checked}
 });
 document.addEventListener('pointerdown',function(e){
   var el=e.target.closest('.drag[data-dx],.drag[data-cov],.trk');if(!el||S.play)return;var c=clip(S.cur);if(!c)return;

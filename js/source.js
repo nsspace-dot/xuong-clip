@@ -11,7 +11,7 @@ var SRCF={ok:!!(window.showDirectoryPicker&&window.crypto&&crypto.subtle),h:null
 // Khóa do chính tab này để lại trước khi tải lại trang (pagehide ghi id vào sessionStorage) thì coi là của mình.
 // Tab nhân bản không có dấu này vì tab gốc chưa rời trang.
 try{SRCF.prev=sessionStorage.getItem('xuongclip_left')||'';sessionStorage.removeItem('xuongclip_left')}catch(e){}
-var STATE_VER=3,XDIR='.xuongclip',LOCK_TTL=120000,VEXT=/\.(mp4|mov|m4v|webm)$/i;
+var STATE_VER=4,XDIR='.xuongclip',LOCK_TTL=120000,VEXT=/\.(mp4|mov|m4v|webm)$/i;
 var OSTAT=['thô','đã dựng','đã đăng'];
 
 /* ---------- tiện ích nhỏ ---------- */
@@ -148,7 +148,7 @@ async function loadState(){
   }
   SRCF.fileSavedAt=Date.parse(use.savedAt)||0; // giờ ghi gần nhất trong file, cho chỉ báo "Đã lưu" lúc vừa mở
   var v=+use.version||1;SRCF.newer=v>STATE_VER?v:0;SRCF.extra={};
-  for(var k in use)if(['version','savedAt','library','deleted','products','rules','mergeSkip','clips','clipsArchived','clipsTrash','exported','info'].indexOf(k)<0)SRCF.extra[k]=use[k];
+  for(var k in use)if(['version','savedAt','library','deleted','products','rules','mergeSkip','clips','clipsArchived','clipsTrash','exported','info','checkRules','checkCfg'].indexOf(k)<0)SRCF.extra[k]=use[k];
   LIB={};(use.library||[]).forEach(function(o){if(o&&o.id&&o.path){var r=fromRec(o);LIB[r.id]=r}});
   SRCF.deleted=[];(Array.isArray(use.deleted)?use.deleted:[]).forEach(function(id){id=String(id);if(!isDel(id))SRCF.deleted.push(id)});
   catalogFromState(use);

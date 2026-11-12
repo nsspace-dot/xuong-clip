@@ -20,7 +20,7 @@ function clipToRec(c){
   if(c.audio&&c.audioDur)o.audioDur=Math.round(c.audioDur*1000)/1000;
   if(c.cov)o.cov=pickKeys(c.cov,COV_KEYS);
   if(c.out)o.out=pickKeys(c.out,['name','ext','mb']);
-  if(c.voiceStale)o.voiceStale=true;if(c.created)o.created=c.created;
+  if(c.voiceStale)o.voiceStale=true;if(c.created)o.created=c.created;if(c.ignored&&c.ignored.length)o.ignored=c.ignored.slice();
   return o}
 function num(v){v=+v;return isFinite(v)?v:undefined}
 function clipFromRec(o){
@@ -33,11 +33,12 @@ function clipFromRec(o){
       return l})};
   if(Array.isArray(o.bounds))c.bounds=o.bounds.map(Number);if(o.bManual)c.bManual=true;if(o.alignInfo)c.alignInfo=String(o.alignInfo);
   if(o.audio&&o.audio.file){c.audio=pickKeys(o.audio,['file','model','voice','src','name','at']);c.audioDur=num(o.audioDur)||null}
+  if(Array.isArray(o.ignored))c.ignored=o.ignored.map(String);
   if(o.cov)c.cov=pickKeys(o.cov,COV_KEYS);if(o.out)c.out=pickKeys(o.out,['name','ext','mb']);if(o.voiceStale)c.voiceStale=true;
   if(!c.lines.length)c.lines.push({t:'',need:'',seg:null,infos:[],choose:false});
   return c}
 function expToRec(x){return pickKeys(x,['id','clipId','fname','g','name','d','ext','date','cap','posted','savedIn'])}
-function clipsState(){return {clips:CLIPS.map(clipToRec),clipsArchived:ARCH.map(clipToRec),clipsTrash:TRASH.map(clipToRec),exported:EXP.map(expToRec),info:pickKeys(INFO,['size','fg','bg','pos','mode','secs'])}}
+function clipsState(){return {clips:CLIPS.map(clipToRec),clipsArchived:ARCH.map(clipToRec),clipsTrash:TRASH.map(clipToRec),exported:EXP.map(expToRec),info:pickKeys(INFO,['size','fg','bg','pos','mode','secs']),checkRules:chkToState().checkRules,checkCfg:chkToState().checkCfg}}
 /* Nạp phần clip từ state.json. Clip đang có trong bộ nhớ (nạp trước khi chọn thư mục) được giữ lại và thêm vào. */
 function clipsFromState(o){
   var mem=SRCF.clipsLoaded?[]:CLIPS.slice(),memExp=SRCF.clipsLoaded?[]:EXP.slice();
@@ -46,6 +47,7 @@ function clipsFromState(o){
   (Array.isArray(o.clipsArchived)?o.clipsArchived:[]).forEach(function(r){var c=clipFromRec(r);if(c)ARCH.push(c)});
   (Array.isArray(o.clipsTrash)?o.clipsTrash:[]).forEach(function(r){var c=clipFromRec(r);if(c)TRASH.push(c)});
   (Array.isArray(o.exported)?o.exported:[]).forEach(function(x){if(x&&x.id)EXP.push(expToRec(x))});
+  chkFromState(o); // luật kiểm tra (version 4); không có thì dùng luật mặc định
   if(o.info&&typeof o.info==='object')['size','fg','bg','pos','mode','secs'].forEach(function(k){if(o.info[k]!=null)INFO[k]=o.info[k]});
   var added=0;mem.forEach(function(c){if(!clipById(c.id)){CLIPS.push(c);added++}else{c.id=uniqueClipId(c.id);CLIPS.push(c);added++}});
   memExp.forEach(function(x){if(!EXP.some(function(y){return y.id===x.id}))EXP.push(x)});

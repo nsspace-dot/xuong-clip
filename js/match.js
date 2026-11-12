@@ -71,24 +71,12 @@ function autoPick(c){
 }
 function lockLine(l){if(l){l.lock=true;l.why=''}}
 
-function warnings(c){
-  var w=[];timeline(c);
-  c.lines.forEach(function(l,i){
-    var texts=[l.t].concat(l.infos.map(function(x){return x.x}));
-    RULES.forEach(function(r){if(r.on&&texts.some(function(t){return r.re.test(t)}))w.push({k:'bad',m:'Dòng '+(i+1)+': '+r.m})});
-    l.infos.forEach(function(x){if(cue(l,x)===null)w.push({k:'warn',m:'Dòng '+(i+1)+': cụm "'+x.ph+'" không có trong lời thoại nên chữ "'+x.x+'" sẽ không hiện'})});
-    if(l.dm>0&&l.ae!=null&&l.dm<(l.ae-l.as)-0.05)w.push({k:'cut',m:'Dòng '+(i+1)+': voice dài '+fmt1(l.ae-l.as)+'s, bạn nhập '+fmt1(l.dm)+'s, sẽ bị cắt '+fmt1(l.ae-l.as-l.dm)+'s'});
-    if(!l.seg)w.push({k:'warn',m:'Dòng '+(i+1)+': chưa có cảnh, xem tab Thiếu source'});
-    else if(lineLost(l))w.push({k:'warn',m:'Dòng '+(i+1)+': mất cảnh ('+lostWhy(l)+'), chọn lại cảnh khác'});
-    else{var u=dupsOf(c,i);if(u.length)w.push({k:'warn',m:'Dòng '+(i+1)+': đoạn này cũng dùng ở '+u.map(useText).join('; ')});
-      if((seg(l.seg)||{}).o==='đã đăng')w.push({k:'warn',m:'Dòng '+(i+1)+': đoạn lấy từ clip đã đăng, dễ bị coi là nội dung lặp'})}
-  });
-  return w;
-}
+/* Cảnh báo cũ (giữ tên hàm cho các chỗ đang gọi): lấy từ checkClip, bỏ các cảnh báo người dùng đã bỏ qua. */
+function warnings(c){var r=checkClip(c);return r.errs.concat(r.warns).map(function(x){return {k:x.lvl==='err'?'bad':'warn',m:(x.i>=0?'Dòng '+(x.i+1)+': ':'')+x.title}})}
 function st(c){
   if(c.exported)return 'exported';if(isDirect(c))return 'ngoai';
   if(!c.auto)return 'chuaghep';if(c.lines.some(function(l){return !lineSeg(l)}))return 'missing';
-  if(warnings(c).some(function(x){return x.k==='bad'}))return 'loi';return 'ready';
+  if(checkClip(c).errs.length)return 'loi';return 'ready';
 }
 /* Cảnh thiếu, gom theo sản phẩm (tên chuẩn). */
 function missingAll(){var o={};CLIPS.forEach(function(c){if(isDirect(c)||!c.auto||c.exported)return;var k=canonicalProduct(c.prod)||'Chưa rõ sản phẩm';

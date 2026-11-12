@@ -14,7 +14,8 @@ js/
   settings.js       Lưu cài đặt nhỏ trong localStorage (Gemini, chất lượng, chữ thông tin, chuyển cảnh, người phụ trách)
   utils.js          Tiện ích dùng chung (escape, chuẩn hóa chữ, màu, msg...)
   timeline.js       Đọc kịch bản, tính dòng thời gian, chữ thông tin, chuyển cảnh
-  match.js          Gợi ý cảnh (chấm điểm, lý do, ngưỡng), ghép tự động, trùng cảnh, kiểm tra luật
+  match.js          Gợi ý cảnh (chấm điểm, lý do, ngưỡng), ghép tự động, trùng cảnh
+  checks.js         Kiểm tra luật trước khi xuất: luật từ ngữ, luật hình thức, vùng an toàn, khóa xuất
   library.js        AI gắn tag, thanh chọn đoạn, xem/cắt đoạn; IndexedDB chỉ giữ handle thư mục
   catalog.js        Danh mục sản phẩm, tên tương đương, canonicalProduct(), quy tắc gắn nhãn, gợi ý gộp
   source.js         Thư mục source: chọn thư mục, quét video, state.json, khóa, hình thu nhỏ
@@ -39,8 +40,9 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
 
 ```
 <thư mục source>/.xuongclip/
-  state.json        version 3: library, deleted, products, rules, mergeSkip (thư viện)
+  state.json        version 4: library, deleted, products, rules, mergeSkip (thư viện)
                     clips, clipsArchived, clipsTrash, exported, info (kịch bản, clip đang ghép, clip đã xuất)
+                    checkRules, checkCfg (luật kiểm tra, ngưỡng, vùng an toàn)
   state.bak.json    bản state.json trước lần ghi gần nhất
   state.v<N>.bak.json   bản trước khi nâng version (giữ lâu dài)
   audio/<mã clip>.wav   giọng đọc đã tạo hoặc tải lên
@@ -66,6 +68,14 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
 - Điểm (tối đa 95): khớp "cảnh cần" với đoạn tag AI / mô tả AI / tên video (60), đủ dài (15), chưa dùng (15), video thô (5); video đã đăng trừ 10, trùng đoạn trừ 30.
 - Dưới ngưỡng (mặc định 40, đổi ở Cài đặt) hoặc trùng đoạn thì không phải gợi ý; cảnh đó vào tab Thiếu source là "cần quay thêm".
 - Trùng cảnh = cùng video, cùng gian, khoảng thời gian chồng nhau. Dòng đã chọn cảnh tay bị khóa, Ghép lại tự động không đổi.
+
+## Kiểm tra luật
+
+- Luật từ ngữ sửa được ở Cài đặt: cụm từ hoặc mẫu, mức LỖI / CẢNH BÁO / NGOẠI LỆ, phạm vi (tất cả, theo gian, theo sản phẩm), bật/tắt, ghi chú; nhân bản, xuất / nhập JSON.
+- Khớp theo từ nguyên vẹn, không phân biệt hoa thường; bỏ qua dấu thanh khi bật tùy chọn. Luật NGOẠI LỆ che cụm được phép (mặc định có "giá trị").
+- Luật hình thức: tổng thời lượng 45–60 giây (LỖI), mỗi dòng 6–9 giây (CẢNH BÁO), chữ số trong lời (CẢNH BÁO), cụm chữ hiện không có trong lời (LỖI), dòng cuối thiếu "giỏ hàng" (CẢNH BÁO), dòng chưa có cảnh / clip chưa có giọng (LỖI), chữ hiện ra ngoài vùng an toàn (CẢNH BÁO). Ngưỡng và bật/tắt ở Cài đặt.
+- Vùng an toàn TikTok: trên 8%, dưới 22%, phải 14%, trái 4% — **số ước lượng, chưa kiểm chứng**.
+- Còn LỖI thì nút Xuất bị khóa; chỉ còn CẢNH BÁO thì hỏi xác nhận. CẢNH BÁO bỏ qua được cho từng clip, LỖI thì không.
 
 ## Mở thử
 
