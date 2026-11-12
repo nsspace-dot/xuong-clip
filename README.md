@@ -18,10 +18,12 @@ js/
   library.js        AI gắn tag, thanh chọn đoạn, xem/cắt đoạn; IndexedDB chỉ giữ handle thư mục
   catalog.js        Danh mục sản phẩm, tên tương đương, canonicalProduct(), quy tắc gắn nhãn, gợi ý gộp
   source.js         Thư mục source: chọn thư mục, quét video, state.json, khóa, hình thu nhỏ
+  clipstore.js      Tự lưu clip đang ghép, giọng đọc (.xuongclip/audio), ảnh bìa, clip đã xuất
   voice.js          Giọng đọc Gemini và căn giọng theo dòng
   wave.js           Sóng âm giọng đọc, vạch chia dòng
   export.js         Xuất video MP4 (WebCodecs + mp4-muxer), ảnh bìa, lưu file
   ui.js             Giao diện các tab, xem trước, điều hướng
+  kbview.js         Tab Kịch bản: nạp theo đợt, trùng mã, lưu trữ đợt, xóa mềm
   libview.js        Tab Thư viện (lọc, chọn nhiều, gắn hàng loạt, hoàn tác) và phần danh mục / quy tắc ở Cài đặt
   events.js         Bắt sự kiện click / nhập / kéo thả
   main.js           Khởi động (nạp cuối cùng)
@@ -37,9 +39,11 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
 
 ```
 <thư mục source>/.xuongclip/
-  state.json        version 2: savedAt, library (path, size, mtime, label, product, manual, guess, status,
-                    duration, desc, tags), deleted, products [{name, aliases, auto}], rules [{contains, product}], mergeSkip
+  state.json        version 3: library, deleted, products, rules, mergeSkip (thư viện)
+                    clips, clipsArchived, clipsTrash, exported, info (kịch bản, clip đang ghép, clip đã xuất)
   state.bak.json    bản state.json trước lần ghi gần nhất
+  state.v<N>.bak.json   bản trước khi nâng version (giữ lâu dài)
+  audio/<mã clip>.wav   giọng đọc đã tạo hoặc tải lên
   lock.json         khóa chống hai tab / hai máy cùng ghi (hết hạn sau 2 phút không cập nhật)
   state.corrupt-<giờ>.json   chỉ có khi state.json bị hỏng
 ```
@@ -51,7 +55,9 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
 - Bỏ qua thư mục / file bắt đầu bằng `.`, `$`, `@`, `#`, `~` (ví dụ `@eaDir`, `#recycle` của Synology).
 - Nút Xóa chỉ ẩn thẻ; khôi phục ở tab Cài đặt.
 - API key Gemini, tên model, người phụ trách lưu trong localStorage của trình duyệt, **không** ghi vào `state.json`.
-- Kịch bản và clip đang ghép chưa được lưu: tải lại trang sẽ mất.
+- Kịch bản, clip đang ghép (cảnh đã chọn, chữ, vị trí chữ, giọng, vạch ranh giới, ảnh bìa) và danh sách Clip đã xuất tự lưu 1,5 giây sau mỗi thay đổi. Giọng đọc nạp lại từ file, không gọi lại API.
+- Nạp kịch bản là thêm vào theo Đợt; trùng mã clip thì tool hỏi. Lưu trữ đợt chỉ ẩn, xóa clip là xóa mềm. Tool không xóa file giọng hay video trên đĩa.
+- Kiểu chữ thông tin lưu theo thư mục; key, model, giọng, người phụ trách, ngưỡng gợi ý, chuyển cảnh mặc định, chất lượng xuất lưu trong trình duyệt.
 
 ## Gợi ý cảnh
 
