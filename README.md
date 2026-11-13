@@ -21,6 +21,7 @@ js/
   source.js         Thư mục source: chọn thư mục, quét video, state.json, khóa, hình thu nhỏ
   clipstore.js      Tự lưu clip đang ghép, giọng đọc (.xuongclip/audio), ảnh bìa, clip đã xuất
   voice.js          Giọng đọc Gemini và căn giọng theo dòng
+  voicemenu.js      Menu chọn giọng: nghe thử, phong cách đọc, tốc độ, mặc định theo người / gian, tạo lại giọng từng dòng
   wave.js           Sóng âm giọng đọc, vạch chia dòng
   export.js         Xuất video MP4 (WebCodecs + mp4-muxer), ảnh bìa, lưu file
   ui.js             Giao diện các tab, xem trước, điều hướng
@@ -47,10 +48,11 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
 
 ```
 <thư mục source>/.xuongclip/
-  state.json        version 6: library, deleted, products, rules, mergeSkip (thư viện)
+  state.json        version 7: library, deleted, products, rules, mergeSkip (thư viện)
                     clips, clipsArchived, clipsTrash, exported, info (kịch bản, clip đang ghép, clip đã xuất)
                     checkRules, checkCfg (luật kiểm tra, ngưỡng, vùng an toàn), milestones (hạn chót)
                     textStyles (kiểu chữ đã lưu, kiểu mặc định theo gian)
+                    voiceDefaults (giọng mặc định theo người, theo gian), customVoices (giọng tự tạo, hiện chưa dùng)
   state.bak.json    bản state.json trước lần ghi gần nhất
   state.v<N>.bak.json   bản trước khi nâng version (giữ lâu dài)
   audio/<mã clip>.wav   giọng đọc đã tạo hoặc tải lên
@@ -104,6 +106,18 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
   Vùng an toàn vẫn được kiểm theo đúng phông, cỡ, vị trí của kiểu.
 - **Khung kết** (mặc định tắt): 1–3 giây sau dòng cuối, nền một màu hoặc giữ khung hình cuối, thêm một dòng chữ.
   Chữ khung kết đi qua luật từ ngữ và vùng an toàn; tổng thời lượng clip tính cả khung kết. Xem thử vẽ bằng đúng hàm của file xuất.
+
+## Giọng đọc
+
+- Menu chọn giọng (nút "Giọng: …" ở thanh trên màn Ghép clip, mục Giọng đọc trong Inspector, hoặc Cài đặt › Giọng mặc định theo người và gian):
+  30 giọng có sẵn của Gemini TTS, nút Nghe thử cho từng giọng đọc câu mẫu bạn tự gõ, ô Phong cách đọc (chữ tự do, có mẫu gợi ý sửa được), Tốc độ.
+- Gemini không có thông số tốc độ riêng: tool ghi thêm câu yêu cầu tốc độ (tiếng Anh) vào phong cách đọc gửi kèm lời.
+- Thứ tự áp dụng: riêng của dòng → riêng của clip → mặc định của người làm → mặc định của gian → mặc định chung (Charon). Màn Ghép ghi rõ giọng đang dùng và lấy theo đâu.
+- Mở menu không gọi API. Chỉ gọi khi bấm Nghe thử / Tạo giọng / Tạo lại. Nghe thử lại cùng giọng, phong cách và câu thì phát bản đã có.
+- Giọng đã tạo không bao giờ tự tạo lại. Đổi giọng của clip / dòng đã có giọng thì tool hỏi một lần, nói rõ dòng nào sẽ tạo lại; đồng ý thì chỉ gọi API cho các dòng đó rồi ghép vào file giọng cũ.
+  Đổi mặc định theo người / gian chỉ báo "cần tạo lại", không gọi API.
+- Lỗi khi gọi API (sai key, hết hạn mức, lỗi máy chủ, mất mạng) hiện bằng lời rõ ràng, không bao giờ in key.
+- "Tạo giọng mới" bằng mô tả: chưa làm, nút để xám kèm lý do (chưa xác minh được API).
 
 ## Xuất
 

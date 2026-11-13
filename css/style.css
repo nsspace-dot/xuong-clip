@@ -545,3 +545,20 @@ input[type=datetime-local]{background:var(--bg);border:1px solid var(--line);bor
 .qs.ok{color:var(--ok);border-color:var(--ok)}.qs.err{color:var(--err);border-color:var(--err)}.qs.skip{color:var(--muted)}.qs.cancel{color:var(--warn);border-color:var(--warn)}.qs.ready{color:var(--accent);border-color:var(--accent)}.qs.run{color:var(--accent)}
 .qtbl tr.qno td{opacity:.7}.qsum{margin-top:12px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}.qsum table{margin-top:6px}
 .qopt input[type=text]{width:100%}
+
+/* ---------- Bước 8: menu giọng đọc ---------- */
+.vchip{font-size:11.5px;padding:3px 9px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);cursor:pointer;white-space:nowrap}
+.vchip:hover{border-color:var(--accent)}
+.vpick{border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px;background:var(--panel2)}
+.vmwrap{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:95;display:flex;align-items:center;justify-content:center;padding:16px}
+.vmbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;width:min(1100px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;padding:14px 16px;box-shadow:0 20px 50px rgba(0,0,0,.6)}
+.vmhd{display:flex;align-items:center;gap:8px;margin-bottom:4px}.vmhd .sp{flex:1}
+.vmgrid{display:grid;grid-template-columns:minmax(260px,360px) 1fr;gap:16px;min-height:0;flex:1;margin-top:8px}
+.vmleft{overflow:auto}.vmleft input,.vmleft textarea,.vmleft select{width:100%}
+.vmlist{overflow:auto;border:1px solid var(--line);border-radius:8px;padding:4px 8px}
+.vrow{display:grid;grid-template-columns:150px 1fr auto auto;gap:8px;align-items:center;padding:5px 2px;border-bottom:1px solid var(--line)}
+.vrow.on{background:rgba(245,165,36,.08)}.vrow .vst{grid-column:1/-1;font-size:11.5px;color:var(--muted)}.vrow .vst:empty{display:none}
+.vst.run{color:var(--accent)}.vst.ok{color:var(--ok)}.vst.err{color:var(--err)}.vst.warn{color:var(--warn)}
+.vdesc{font-size:12px;color:var(--muted)}.vpres .chip{font-size:11px}
+.vcreate{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
+@media (max-width:900px){.vmgrid{grid-template-columns:1fr}}

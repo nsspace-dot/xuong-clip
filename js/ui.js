@@ -59,7 +59,7 @@ function suggestSettings(){
    '<label class="ck"><input type="checkbox" id="sgguess" '+(SG.allowGuess?'checked':'')+'><span>Cho phép gợi ý cả video có nhãn sản phẩm "đoán" chưa xác nhận</span></label></div>'}
 function vCaidat(){
   return '<h1>Cài đặt</h1><p class="sub">Chỉnh người phụ trách, danh mục sản phẩm, quy tắc gắn nhãn, chữ thông tin, thư mục lưu clip, giọng Gemini và bảng luật. Thay đổi được nhớ trong trình duyệt này.</p>'+
-  gemSettings()+checkRulesSettings()+checkFormSettings()+safeSettings()+
+  gemSettings()+voiceDefaultsSettings()+checkRulesSettings()+checkFormSettings()+safeSettings()+
   peopleSettings()+catalogSettings()+rulesSettings()+suggestSettings()+infoSettings()+folderSettings()+deletedSettings()+qualitySettings()+tsSettings()+'<div class="set"><div class="meta">Chưa có: logo từng gian. Nhạc nền chọn riêng cho từng clip ở màn Ghép clip.</div></div>';
 }
 function infoSettings(){

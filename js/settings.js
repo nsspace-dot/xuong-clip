@@ -1,5 +1,5 @@
 /* Lưu cài đặt nhỏ trong localStorage: Gemini, chất lượng xuất, chữ thông tin, chuyển cảnh. */
-var GEM={key:'',model:'gemini-3.8-flash-tts',vmodel:'gemini-3.8-flash',voice:'Kore',style:'warm, friendly Vietnamese woman with a Southern accent, natural conversational tone like replying to a customer comment, moderate pace',rep:'20,5=hai mươi phẩy năm\n14,5=mười bốn phẩy năm\nA4=a bốn',byGian:{}};
+var GEM={key:'',model:'gemini-3.8-flash-tts',vmodel:'gemini-3.8-flash',voice:'Charon',style:'warm, friendly Vietnamese woman with a Southern accent, natural conversational tone like replying to a customer comment, moderate pace',rep:'20,5=hai mươi phẩy năm\n14,5=mười bốn phẩy năm\nA4=a bốn',byGian:{}};
 try{var gs=JSON.parse(localStorage.getItem('xuongclip_gem')||'null');if(gs)for(var gk in gs)GEM[gk]=gs[gk]}catch(e){}
 var EXPQ={res:'1080',br:'vua',tpl:'<mã>_<tên>',date:false};
 try{var q0=JSON.parse(localStorage.getItem('xuongclip_q')||'null');if(q0)for(var qk in q0)EXPQ[qk]=q0[qk]}catch(e){}

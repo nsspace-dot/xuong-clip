@@ -5,7 +5,7 @@
    Thay đổi được phát hiện bằng cách so "chữ ký" dữ liệu clip sau mỗi lần bấm, đổi, thả chuột hay gõ phím,
    rồi dùng chung cơ chế ghi trễ 1,5 giây của source.js. Kéo thanh trượt chỉ ghi khi thả. */
 var ARCH=[],TRASH=[];
-var LINE_KEYS=['t','need','seg','segIn','segOut','lock','tr','spd','dm','dd','fill','why','flt','fx'];
+var LINE_KEYS=['t','need','seg','segIn','segOut','lock','tr','spd','dm','dd','fill','why','flt','fx','vc'];
 var INFO_KEYS=['x','ph','off','len','sz','px','py','st'];
 var END_KEYS=['on','dur','mode','color','text','st'];
 var COV_KEYS=['li','tm','text','px','py','sz','fg','bg','nobg'];
@@ -17,7 +17,8 @@ function clipToRec(c){
     lines:c.lines.map(function(l){var r=pickKeys(l,LINE_KEYS);r.t=l.t||'';r.need=l.need||'';r.infos=(l.infos||[]).map(function(x){return pickKeys(x,INFO_KEYS)});return r})};
   if(c.bounds&&c.bounds.length)o.bounds=c.bounds.map(function(x){return Math.round(x*1000)/1000});
   if(c.bManual)o.bManual=true;if(c.alignInfo)o.alignInfo=c.alignInfo;
-  if(c.audio)o.audio=pickKeys(c.audio,['file','model','voice','src','name','at']);
+  if(c.audio)o.audio=pickKeys(c.audio,['file','model','voice','src','name','at','lv','style']);
+  if(c.vc&&!vcEmpty(c.vc))o.vc=vcClean(c.vc);
   if(c.audio&&c.audioDur)o.audioDur=Math.round(c.audioDur*1000)/1000;
   if(c.cov)o.cov=pickKeys(c.cov,COV_KEYS);
   if(c.music&&c.music.file)o.music=pickKeys(musCfg(c.music),MUS_KEYS);
@@ -33,11 +34,13 @@ function clipFromRec(o){
     lines:(Array.isArray(o.lines)?o.lines:[]).map(function(r){r=r||{};var l={t:String(r.t||''),need:String(r.need||''),seg:r.seg?String(r.seg):null,infos:[],choose:false};
       ['segIn','segOut','spd','dm','dd'].forEach(function(k){var v=num(r[k]);if(v!==undefined)l[k]=v});
       if(r.lock)l.lock=true;['tr','fill','why'].forEach(function(k){if(r[k])l[k]=String(r[k])});
+      if(r.vc&&typeof r.vc==='object'){var vv=vcClean(r.vc);if(!vcEmpty(vv))l.vc=vv}
       if(r.flt&&typeof r.flt==='object'){var f0=lineFlt(r);if(!fltZero(f0))l.flt=f0}if(r.fx&&typeof r.fx==='object'){var x0=lineFx(r);if(!fxZero(x0))l.fx=x0}
       l.infos=(Array.isArray(r.infos)?r.infos:[]).map(function(x){x=x||{};var i={x:String(x.x==null?'':x.x),ph:String(x.ph||'')};if(x.st)i.st=String(x.st);['off','len','sz','px','py'].forEach(function(k){var v=num(x[k]);if(v!==undefined)i[k]=v});return i});
       return l})};
   if(Array.isArray(o.bounds))c.bounds=o.bounds.map(Number);if(o.bManual)c.bManual=true;if(o.alignInfo)c.alignInfo=String(o.alignInfo);
-  if(o.audio&&o.audio.file){c.audio=pickKeys(o.audio,['file','model','voice','src','name','at']);c.audioDur=num(o.audioDur)||null}
+  if(o.vc&&typeof o.vc==='object'){var cv0=vcClean(o.vc);if(!vcEmpty(cv0))c.vc=cv0}
+  if(o.audio&&o.audio.file){c.audio=pickKeys(o.audio,['file','model','voice','src','name','at','lv','style']);if(c.audio.lv&&!Array.isArray(c.audio.lv))delete c.audio.lv;c.audioDur=num(o.audioDur)||null}
   if(Array.isArray(o.ignored))c.ignored=o.ignored.map(String);
   if(o.posted){c.posted=true;if(o.postedAt)c.postedAt=String(o.postedAt)}
   if(o.cov)c.cov=pickKeys(o.cov,COV_KEYS);
@@ -47,7 +50,7 @@ function clipFromRec(o){
   if(!c.lines.length)c.lines.push({t:'',need:'',seg:null,infos:[],choose:false});
   return c}
 function expToRec(x){return pickKeys(x,['id','clipId','fname','txt','g','name','d','ext','res','mb','date','cap','posted','savedIn'])}
-function clipsState(){return {clips:CLIPS.map(clipToRec),clipsArchived:ARCH.map(clipToRec),clipsTrash:TRASH.map(clipToRec),exported:EXP.map(expToRec),info:pickKeys(INFO,['size','fg','bg','pos','mode','secs']),checkRules:chkToState().checkRules,checkCfg:chkToState().checkCfg,milestones:milesToState(),textStyles:tsToState()}}
+function clipsState(){return {clips:CLIPS.map(clipToRec),clipsArchived:ARCH.map(clipToRec),clipsTrash:TRASH.map(clipToRec),exported:EXP.map(expToRec),info:pickKeys(INFO,['size','fg','bg','pos','mode','secs']),checkRules:chkToState().checkRules,checkCfg:chkToState().checkCfg,milestones:milesToState(),textStyles:tsToState(),voiceDefaults:vdToState(),customVoices:cvToState()}}
 /* Nạp phần clip từ state.json. Clip đang có trong bộ nhớ (nạp trước khi chọn thư mục) được giữ lại và thêm vào. */
 function clipsFromState(o){
   var mem=SRCF.clipsLoaded?[]:CLIPS.slice(),memExp=SRCF.clipsLoaded?[]:EXP.slice();
@@ -58,13 +61,14 @@ function clipsFromState(o){
   (Array.isArray(o.exported)?o.exported:[]).forEach(function(x){if(x&&x.id)EXP.push(expToRec(x))});
   milesFromState(o); // mốc hạn chót (version 5)
   tsFromState(o); // kiểu chữ đã lưu (version 6)
+  vdFromState(o); // giọng mặc định theo người / gian, giọng tự tạo (version 7)
   chkFromState(o); // luật kiểm tra (version 4); không có thì dùng luật mặc định
   if(o.info&&typeof o.info==='object')['size','fg','bg','pos','mode','secs'].forEach(function(k){if(o.info[k]!=null)INFO[k]=o.info[k]});
   var added=0;mem.forEach(function(c){if(!clipById(c.id)){CLIPS.push(c);added++}else{c.id=uniqueClipId(c.id);CLIPS.push(c);added++}});
   memExp.forEach(function(x){if(!EXP.some(function(y){return y.id===x.id}))EXP.push(x)});
   SRCF.clipsLoaded=true;S.clipUndo=null;
   return added}
-function clipsReset(){if(!SRCF.clipsLoaded)return;TS={list:[],byGian:{}};CLIPS=[];ARCH=[];TRASH=[];EXP=[];S.edit=null;S.cur=null;S.clipUndo=null;S.imp=null;SRCF.clipsLoaded=false;CLIPSIG=''}
+function clipsReset(){if(!SRCF.clipsLoaded)return;TS={list:[],byGian:{}};VDEF={person:{},gian:{}};CVOICES=[];CLIPS=[];ARCH=[];TRASH=[];EXP=[];S.edit=null;S.cur=null;S.clipUndo=null;S.imp=null;SRCF.clipsLoaded=false;CLIPSIG=''}
 function clipById(id){return CLIPS.concat(ARCH,TRASH).filter(function(c){return c.id===id})[0]||null}
 function uniqueClipId(id){if(!clipById(id))return id;for(var k=2;;k++){var n=id+'-'+k;if(!clipById(n))return n}}
 

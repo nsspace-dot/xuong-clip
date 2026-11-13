@@ -21,7 +21,7 @@ function chkSum(c){var r=checkClip(c);return '<span class="k">Kiểm tra</span><
 /* ---------- các mảnh ---------- */
 function edTop(c,tot){
   var sel='<select id="pickclip" aria-label="Chọn clip">'+CLIPS.map(function(x){return '<option value="'+esc(x.id)+'" '+(x.id===c.id?'selected':'')+'>'+esc(x.id)+' · '+esc(x.name)+'</option>'}).join('')+'</select>';
-  return '<div class="etop">'+chkDot(c)+sel+'<span class="tc" title="Tổng thời lượng'+(endOn(c)?' (kể cả khung kết)':'')+'">'+tc(tot+endDur(c))+'</span><span class="meta eg">'+esc(c.g)+(c.prod?' · '+esc(c.prod):'')+'</span>'+
+  return '<div class="etop">'+chkDot(c)+sel+'<span class="tc" title="Tổng thời lượng'+(endOn(c)?' (kể cả khung kết)':'')+'">'+tc(tot+endDur(c))+'</span><span class="meta eg">'+esc(c.g)+(c.prod?' · '+esc(c.prod):'')+'</span><button class="vchip" data-vmopen="clip|'+esc(c.id)+'" title="Giọng đang dùng (theo '+esc(vcFor(c).src)+'). Bấm để chọn giọng">Giọng: '+esc(voiceLabel(vcFor(c).voice))+'</button>'+
    '<div class="chkw"><button class="chkt" id="chkt" data-ui="chk" aria-expanded="'+(S.chkOpen?'true':'false')+'">'+chkSum(c)+'</button>'+
    '<div class="chk chkdd" id="chkbox"'+(S.chkOpen?'':' hidden')+'>'+chkPanel(c)+'</div></div>'+
    '<span class="sp"></span><button class="btn sm" data-auto="'+esc(c.id)+'">Ghép lại tự động</button>'+
