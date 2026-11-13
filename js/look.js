@@ -15,10 +15,15 @@ function fxZero(fx){return fx.fit==='cover'&&fx.z===1&&!fx.px&&!fx.py}
 function fxRect(vw,vh,W,H,fx){var k=(fx.fit==='contain'?Math.min(W/vw,H/vh):Math.max(W/vw,H/vh))*fx.z,dw=vw*k,dh=vh*k,mx=Math.max(0,(dw-W)/2),my=Math.max(0,(dh-H)/2);
   return {x:(W-dw)/2-fx.px*mx,y:(H-dh)/2-fx.py*my,w:dw,h:dh,mx:mx,my:my}}
 /* Làm nét nhẹ (unsharp 3×3) trên toàn bộ điểm ảnh của canvas. a: 0..1. */
-function sharpen(ctx,a){if(!(a>0))return;var cv=ctx.canvas,W=cv.width,H=cv.height,img=ctx.getImageData(0,0,W,H),s=img.data,o=new Uint8ClampedArray(s.length),k=a*0.9,c=1+4*k,row=W*4;
-  o.set(s);for(var y=1;y<H-1;y++){var b=y*row;for(var x=4;x<row-4;x+=4){var i=b+x;
+/* Sắc nét: nhân chập 3×3 (tâm 1+4k, bốn cạnh -k) trên điểm ảnh. Dùng lại một bộ đệm ImageData cho mọi khung
+   (không cấp phát 8 MB mỗi khung ở 1080p). Đã thử bộ lọc SVG feConvolveMatrix qua ctx.filter: trên máy test
+   không có GPU chậm hơn khoảng 5 lần, nên giữ cách này. Kết quả giống hệt bản trước. */
+var SHBI=null;
+function sharpen(ctx,a){if(!(a>0))return;var cv=ctx.canvas,W=cv.width,H=cv.height,s=ctx.getImageData(0,0,W,H).data,k=a*0.9,c=1+4*k,row=W*4;
+  if(!SHBI||SHBI.width!==W||SHBI.height!==H)SHBI=new ImageData(W,H);var o=SHBI.data;o.set(s);
+  for(var y=1;y<H-1;y++){var b=y*row,e=b+row-4;for(var i=b+4;i<e;i+=4){
     o[i]=c*s[i]-k*(s[i-4]+s[i+4]+s[i-row]+s[i+row]);o[i+1]=c*s[i+1]-k*(s[i-3]+s[i+5]+s[i+1-row]+s[i+1+row]);o[i+2]=c*s[i+2]-k*(s[i-2]+s[i+6]+s[i+2-row]+s[i+2+row])}}
-  img.data.set(o);ctx.putImageData(img,0,0)}
+  ctx.putImageData(SHBI,0,0)}
 /* Vẽ khung hình nguồn v cho dòng l lên ctx (khung logic W×H). raw=true: bỏ bộ lọc (nút "Giữ để so sánh"). */
 function drawSrc(ctx,W,H,v,l,raw){
   var fx=lineFx(l),f=raw?FLT0:lineFlt(l),r=fxRect(v.videoWidth,v.videoHeight,W,H,fx);
