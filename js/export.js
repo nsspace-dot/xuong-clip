@@ -46,12 +46,17 @@ async function pickCodecs(w,h,hasA,ch){
     for(var j=0;j<al.length&&!ac;j++){try{var r2=await AudioEncoder.isConfigSupported({codec:al[j][0],sampleRate:48000,numberOfChannels:ch,bitrate:128000});if(r2&&r2.supported)ac=al[j]}catch(e){}}
     if(!ac)return null}
   return {vc:vc[0],mv:vc[1],ac:ac?ac[0]:null,ma:ac?ac[1]:null}}
-function exportClip(c){
+/* Xuất một clip. opt.queue: chạy trong hàng đợi (không hỏi, không hiện thông báo riêng),
+   opt.onProg(0..1): tiến độ. Trả về Promise {ok, fname, txt, mb, ext} hoặc {ok:false, err} / {ok:false, cancel:true}.
+   S.expCancel = true thì dừng ở khung hình kế tiếp, không lưu file. */
+function exportClip(c,opt){opt=opt||{};var Q=!!opt.queue,prog=opt.onProg||function(){};
   askDir();
   var types=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
   var mime='';for(var i=0;i<types.length;i++){if(window.MediaRecorder&&MediaRecorder.isTypeSupported(types[i])){mime=types[i];break}}
-  if(!mime&&!canOffline()){msg('Trình duyệt này không hỗ trợ ghi video. Hãy dùng Chrome bản mới.');return}
-  S.exporting=true;stop();render();
+  if(!mime&&!canOffline()){var m0='Trình duyệt này không hỗ trợ ghi video. Hãy dùng Chrome bản mới.';if(!Q)msg(m0);return Promise.resolve({ok:false,err:m0})}
+  S.exporting=true;if(!Q)S.expCancel=false;stop();if(!Q)render();
+  var BR=expBitrate(),CANCEL=function(){var e=new Error('Đã hủy');e.cancel=true;return e};
+  return new Promise(function(RES){
   var st=function(m){var e=document.getElementById('expst');if(e)e.textContent=m};
   var kq=EXPQ.res==='1080'?1.5:1,W=720,H=1280,cv=newCanvas(W*kq,H*kq),ctx=cv.getContext('2d');ctx.setTransform(kq,0,0,kq,0,0);
   var audioEl=null,adur=0,prep=Promise.resolve();
@@ -62,9 +67,11 @@ function exportClip(c){
     var vids=c.lines.map(function(l){var sg=l.seg?seg(l.seg):null;if(!sg||!sg.url)return null;var v=document.createElement('video');v.muted=true;v.playsInline=true;v.preload='auto';v.src=sg.url;return v});
     var lineAt=function(t){var li=c.lines.length-1;for(var j=0;j<c.lines.length;j++){if(t>=Sx[j]&&t<Sx[j]+D[j]){li=j;break}}return li};
     var newSt=function(){return {drew:false,bad:{},li:-1,tr:null,hasPrev:false,cur:newCanvas(cv.width,cv.height),prev:newCanvas(cv.width,cv.height)}};
-    var done=function(blob,ext,actx){var url=URL.createObjectURL(blob),mb=(blob.size/1048576).toFixed(1),base=fname(c);c.out={url:url,ext:ext,mb:mb,name:base+'.'+ext};c.exported=true;
-      EXP.unshift({id:'X'+(EXP.length+1)+'-'+c.id,clipId:c.id,fname:base+'.'+ext,g:c.g,name:c.name,d:Math.round(total),url:url,ext:ext,date:new Date().toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}),cap:c.name+' #tiktokshop #newshop',posted:false});
-      S.exporting=false;try{if(actx)actx.close()}catch(x){}saveOut(blob,base,ext,function(extra,sv){if(sv){EXP[0].savedIn=S.dir.name;EXP[0].fname=sv}touchClips();msg('Đã xuất xong '+c.id+' ('+ext+', '+mb+' MB).'+extra+' Xem và tải về ngay bên dưới.')})};
+    var done=function(blob,ext,actx){var url=URL.createObjectURL(blob),mb=(blob.size/1048576).toFixed(1);S.exporting=false;try{if(actx)actx.close()}catch(x){}prog(1);
+      return saveExport(c,blob,expName(c),ext).then(function(sv){c.out={url:url,ext:ext,mb:mb,name:sv.name,txt:sv.txt};c.exported=true;
+      EXP.unshift({id:'X'+Date.now().toString(36)+'-'+c.id,clipId:c.id,fname:sv.name,txt:sv.txt,txtUrl:sv.txtUrl,g:c.g,name:c.name,d:Math.round(total),url:url,ext:ext,res:EXPQ.res,mb:mb,date:new Date().toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}),cap:c.capt||'',posted:false});
+      if(sv.savedIn)EXP[0].savedIn=sv.savedIn;touchClips();if(!Q){msg('Đã xuất xong '+c.id+' ('+ext+', '+mb+' MB).'+sv.extra+' Xem và tải về ngay bên dưới.')}
+      RES({ok:true,fname:sv.name,txt:sv.txt,mb:mb,ext:ext})})};
     st('Đang nạp video...');
     return Promise.all(vids.map(function(v){return !v?0:new Promise(function(res){var d=false,f=function(){if(!d){d=true;res()}};v.oncanplay=f;v.onerror=f;setTimeout(f,20000);if(v.readyState>=3)f()})})).then(function(){
       var unreadable=[];vids.forEach(function(v,i){if(v&&!(v.videoWidth>0&&v.readyState>=2))unreadable.push(i+1)});
@@ -81,7 +88,7 @@ function exportClip(c){
         if(hasA)mc.audio={codec:cod.ma,numberOfChannels:ch,sampleRate:48000};
         var muxer=new Mp4Muxer.Muxer(mc),encErr=null;
         var venc=new VideoEncoder({output:function(chunk,meta){muxer.addVideoChunk(chunk,meta)},error:function(e){encErr=e}});
-        venc.configure({codec:cod.vc,width:cv.width,height:cv.height,bitrate:kq>1?8e6:5e6,framerate:FPS,latencyMode:'quality'});
+        venc.configure({codec:cod.vc,width:cv.width,height:cv.height,bitrate:BR,framerate:FPS,latencyMode:'quality'});
         var aenc=null;
         if(hasA){aenc=new AudioEncoder({output:function(chunk,meta){muxer.addAudioChunk(chunk,meta)},error:function(e){encErr=e}});aenc.configure({codec:cod.ac,sampleRate:48000,numberOfChannels:ch,bitrate:128000});
           var BL=4800,tl48=Math.ceil(total*48000),mix=[],len=tl48;
@@ -97,14 +104,14 @@ function exportClip(c){
             if((off/BL)%20===0){if(encErr)throw encErr;await yieldNow()}}}
         var S2=newSt(),t0=performance.now();
         for(var k=0;k<N;k++){
-          if(encErr)throw encErr;
+          if(encErr)throw encErr;if(S.expCancel){try{venc.close();if(aenc)aenc.close()}catch(x){}throw CANCEL()}
           var t=k/FPS,li=lineAt(t),l=c.lines[li],sg=l.seg?seg(l.seg):null,v=vids[li];
           if(ED&&t>=acc)drawEndCard(ctx,W,H,c,S2.cur);
           else{if(v&&v.videoWidth&&sg)await seekVid(v,srcT(l,sg,t));
           compose(ctx,W,H,c,li,t,v,S2,Sx[li])}
           var fr=new VideoFrame(cv,{timestamp:Math.round(k*1e6/FPS),duration:Math.round(1e6/FPS)});venc.encode(fr,{keyFrame:k%60===0});fr.close();
           while(venc.encodeQueueSize>6)await yieldNow();
-          if(k%6===0){var el=(performance.now()-t0)/1000;st('Đang dựng khung hình '+k+' / '+N+' ('+Math.round(k/N*100)+'%), đã chạy '+el.toFixed(0)+'s');await yieldNow()}
+          if(k%6===0){var el=(performance.now()-t0)/1000;prog(k/N);st('Đang dựng khung hình '+k+' / '+N+' ('+Math.round(k/N*100)+'%), đã chạy '+el.toFixed(0)+'s');await yieldNow()}
         }
         await venc.flush();if(aenc)await aenc.flush();muxer.finalize();
         return new Blob([target.buffer],{type:'video/mp4'})};
@@ -112,18 +119,24 @@ function exportClip(c){
       /* ---- cách 2: ghi theo thời gian thật, nhịp vẽ chạy bằng bộ đếm riêng ---- */
       var realtime=function(){
         return new Promise(function(resolve){
-          if(!mime){S.exporting=false;msg('Trình duyệt này không hỗ trợ ghi video. Hãy dùng Chrome bản mới.');return}
+          if(!mime){S.exporting=false;var m1='Trình duyệt này không hỗ trợ ghi video. Hãy dùng Chrome bản mới.';if(!Q)msg(m1);RES({ok:false,err:m1});resolve();return}
           var cs=cv.captureStream(30),actx=null,musEl=hasMusic(c)?new Audio(c.musicUrl):null,musG=null,vsp=voiceSpans(c);
           if(audioEl||musEl){try{actx=new (window.AudioContext||window.webkitAudioContext)();var dest=actx.createMediaStreamDestination();if(audioEl)actx.createMediaElementSource(audioEl).connect(dest);if(musEl){musG=actx.createGain();actx.createMediaElementSource(musEl).connect(musG);musG.connect(dest)}dest.stream.getAudioTracks().forEach(function(t){cs.addTrack(t)})}catch(x){}}
-          var rec=new MediaRecorder(cs,{mimeType:mime,videoBitsPerSecond:kq>1?8000000:5000000}),chunks=[];
+          var rec=new MediaRecorder(cs,{mimeType:mime,videoBitsPerSecond:BR}),chunks=[];
           rec.ondataavailable=function(e){if(e.data&&e.data.size)chunks.push(e.data)};
           var prevLi=-1,aLi=-1,t0=0,timer=null,S2=newSt();
           var finish=function(){timer.stop();vids.forEach(function(v){if(v)try{v.pause()}catch(x){}});if(audioEl)try{audioEl.pause()}catch(x){}
             if(musEl)try{musEl.pause()}catch(x){}
             rec.onstop=function(){var ext=/mp4/.test(mime)?'mp4':'webm';done(new Blob(chunks,{type:mime.split(';')[0]}),ext,actx);resolve()};rec.stop()};
           rec.start(500);t0=performance.now();if(audioEl&&!manualDur(c))audioEl.play().catch(function(){});
-          timer=mkTick(function(){
+          var fail=function(e){timer.stop();vids.forEach(function(v){if(v)try{v.pause()}catch(x){}});[audioEl,musEl].forEach(function(a){if(a)try{a.pause()}catch(x){}});
+            var m2=e&&e.message?e.message:String(e);rec.onstop=function(){S.exporting=false;try{if(actx)actx.close()}catch(x){}st('Xuất lỗi: '+m2);if(!Q)msg('Xuất lỗi: '+m2);RES({ok:false,err:m2});resolve()};try{rec.stop()}catch(x){rec.onstop()}};
+          timer=mkTick(function(){try{tickRT()}catch(e){fail(e)}},33); // lỗi trong một khung không treo cả lần xuất
+          function tickRT(){
             var t=(performance.now()-t0)/1000;if(t>=total){finish();return}
+            if(S.expCancel){timer.stop();vids.forEach(function(v){if(v)try{v.pause()}catch(x){}});[audioEl,musEl].forEach(function(a){if(a)try{a.pause()}catch(x){}});
+              rec.onstop=function(){S.exporting=false;try{if(actx)actx.close()}catch(x){}st('Đã hủy.');RES({ok:false,cancel:true});resolve()};rec.stop();return}
+            prog(t/total);
             var li=lineAt(t),l=c.lines[li],sg=l.seg?seg(l.seg):null,v=vids[li];
             if(li!==prevLi){if(prevLi>=0&&vids[prevLi])try{vids[prevLi].pause()}catch(x){}if(v&&sg){try{v.currentTime=l.segIn||0;v.play().catch(function(){})}catch(x){}}prevLi=li}
             if(audioEl&&manualDur(c)){if(li!==aLi){aLi=li;try{audioEl.currentTime=l.as}catch(x){}audioEl.play().catch(function(){})}else if(!audioEl.paused&&audioEl.currentTime>=l.ae-0.02)audioEl.pause()}
@@ -131,16 +144,17 @@ function exportClip(c){
             if(ED&&t>=acc){if(v)try{v.pause()}catch(x){}drawEndCard(ctx,W,H,c,S2.cur);return}
             rtAdj(v,l,sg);
             compose(ctx,W,H,c,li,t,v,S2,Sx[li]);
-            st('Đang xuất theo thời gian thật... '+Math.floor(t)+' / '+Math.ceil(total)+'s (giữ tab này ở phía trước)')},33)})};
+            st('Đang xuất theo thời gian thật... '+Math.floor(t)+' / '+Math.ceil(total)+'s (giữ tab này ở phía trước)')}})};
 
       if(canOffline()){
-        return offline().then(function(blob){done(blob,'mp4',null)}).catch(function(e){
-          st('Không dựng nhanh được ('+(e&&e.message?e.message:e)+'). Chuyển sang ghi theo thời gian thật...');
-          vids.forEach(function(v){if(v)try{v.pause()}catch(x){}});return realtime()})}
+        return offline().then(function(blob){return done(blob,'mp4',null)}).catch(function(e){
+          vids.forEach(function(v){if(v)try{v.pause()}catch(x){}});
+          if(e&&e.cancel){S.exporting=false;st('Đã hủy.');RES({ok:false,cancel:true});return}
+          st('Không dựng nhanh được ('+(e&&e.message?e.message:e)+'). Chuyển sang ghi theo thời gian thật...');return realtime()})}
       return realtime();
     });
-  }).catch(function(e){S.exporting=false;msg('Xuất lỗi: '+e)});
-}
+  }).catch(function(e){S.exporting=false;if(!Q)msg('Xuất lỗi: '+e);RES({ok:false,err:String(e&&e.message?e.message:e)})});
+  })}
 /* Trộn nhạc nền vào các kênh mix (đã có giọng), âm lượng theo musicAt() tính mỗi 10 ms, nội suy tuyến tính. */
 function mixMusic(c,mb,mix,sr){var sp=voiceSpans(c),n=mix[0].length,B=Math.round(sr/100),mc=mb.numberOfChannels,ch=[];for(var q=0;q<mix.length;q++)ch.push(mb.getChannelData(Math.min(q,mc-1)));
   var ml=mb.length,prev=musicAt(c,0,sp);
@@ -177,7 +191,7 @@ function pickDir(){
   window.showDirectoryPicker({mode:'readwrite'}).then(function(h){S.dir=h;idbSet('dir',h).catch(function(){});msg('Đã chọn thư mục "'+h.name+'". Clip xuất xong sẽ lưu vào đó.')})
    .catch(function(e){if(e&&e.name!=='AbortError')msg('Không chọn được thư mục ('+(e.message||e)+'). Hãy thử một thư mục riêng, không phải Downloads hay Desktop.')})
 }
-function fname(c){var d=new Date(),p=function(n){return ('0'+n).slice(-2)};return (c.id+'_'+c.g.replace(/\s+/g,'')+'_'+p(d.getDate())+'-'+p(d.getMonth()+1)).replace(/[\\\/:*?"<>|]/g,'')}
+function fname(c){return expName(c)} // theo mẫu tên file ở js/queue.js
 function uniq(dir,base,ext,i){var n=i>1?base+'-'+i+'.'+ext:base+'.'+ext;return dir.getFileHandle(n).then(function(){return uniq(dir,base,ext,i+1)},function(){return n})}
 function saveOut(blob,base,ext,done){
   if(!S.dir){done('');return}

@@ -34,12 +34,12 @@ function vThieu(){
 function vDaxuat(){
   var gs=['Tất cả'].concat(Object.keys(EXP.reduce(function(o,x){o[x.g]=1;return o},{})));
   var rows=EXP.filter(function(x){return S.expG==='Tất cả'||x.g===S.expG});
-  var h='<h1>Clip đã xuất</h1><p class="sub">Các clip đã ghép xong. Sửa caption, đánh dấu đã đăng. Bản thật lưu file mp4 vào thư mục bạn chọn trong Cài đặt, kèm xem lại ngay tại đây.</p>';
-  if(!EXP.length)return h+'<div class="empty">Chưa xuất clip nào. Ghép xong ở tab Ghép clip rồi bấm Xuất clip.</div>';
+  var h='<h1>Clip đã xuất</h1><p class="sub">Xuất nhiều clip một lần, xem lại, sửa caption, đánh dấu đã đăng. File mp4 và file .txt cùng tên lưu vào thư mục bạn chọn trong Cài đặt.</p>'+qPanel();
+  if(!EXP.length)return h+'<div class="empty">Chưa xuất clip nào. Chọn clip ở bảng Xuất hàng loạt phía trên, hoặc bấm Xuất ở màn Ghép clip.</div>';
   h+='<div class="chips">'+gs.map(function(g){return '<button class="chip '+(S.expG===g?'on':'')+'" data-eg="'+esc(g)+'">'+esc(g)+'</button>'}).join('')+'</div>';
   h+='<div class="tbl"><table><thead><tr><th>Clip</th><th>Gian</th><th>Giờ</th><th>Dài</th><th>Video</th><th style="min-width:260px">Caption</th><th>Đăng</th><th></th></tr></thead><tbody>'+
-   rows.map(function(x){return '<tr><td><b>'+esc(x.clipId)+'</b><div class="meta">'+esc(x.name)+'</div></td><td>'+esc(x.g)+'</td><td class="mono">'+esc(x.date)+'</td><td class="mono">'+x.d+'s</td><td>'+(x.url?'<video src="'+x.url+'" controls playsinline style="width:90px;border-radius:6px;background:#000"></video><br><a class="btn sm" href="'+x.url+'" download="'+esc(x.fname||(x.clipId+'.'+x.ext))+'">Tải về</a>':'<span class="meta">'+(x.savedIn?'Đã lưu ở thư mục "'+esc(x.savedIn)+'"':'Bản xem trong trình duyệt không còn')+'<br>'+esc(x.fname||'')+'</span>')+'</td>'+
-     '<td><textarea data-cap="'+x.id+'" aria-label="Caption" style="min-height:44px">'+esc(x.cap)+'</textarea></td>'+
+   rows.map(function(x){return '<tr><td><b>'+esc(x.clipId)+'</b><div class="meta">'+esc(x.name)+'</div></td><td>'+esc(x.g)+'</td><td class="mono">'+esc(x.date)+'</td><td class="mono">'+x.d+'s'+(x.res?'<div class="meta">'+x.res+'p · '+esc(x.mb||'')+' MB</div>':'')+'</td><td>'+(x.url?'<video src="'+x.url+'" controls playsinline style="width:90px;border-radius:6px;background:#000"></video><br><a class="btn sm" href="'+x.url+'" download="'+esc(x.fname||(x.clipId+'.'+x.ext))+'">Tải về</a>':'<span class="meta">'+(x.savedIn?'Đã lưu ở thư mục "'+esc(x.savedIn)+'"':'Bản xem trong trình duyệt không còn')+'<br>'+esc(x.fname||'')+'</span>')+'</td>'+
+     '<td><textarea data-cap="'+x.id+'" aria-label="Caption" style="min-height:44px" placeholder="Chưa có caption">'+esc(x.cap||'')+'</textarea><div class="bar" style="margin-top:2px"><button class="btn xs" data-copycap="exp|'+x.id+'">Sao chép caption</button>'+(x.txtUrl?'<a class="btn xs" href="'+x.txtUrl+'" download="'+esc(x.txt||'')+'">Tải .txt</a>':(x.txt?'<span class="meta mono">'+esc(x.txt)+'</span>':''))+'</div></td>'+
      '<td><label><input type="checkbox" data-posted="'+x.id+'" '+(x.posted?'checked':'')+'> Đã đăng</label></td><td><button class="btn sm" data-delexp="'+x.id+'">Xóa</button></td></tr>'}).join('')+'</tbody></table></div>';
   return h;
 }
@@ -71,9 +71,6 @@ function infoSettings(){
    '<div><label class="lab" for="i5">Hiện trong bao lâu</label><select id="i5" data-info="mode">'+md.map(function(o){return '<option value="'+o[0]+'" '+(INFO.mode===o[0]?'selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div>'+
    '<div><label class="lab" for="i6">Số giây (khi chọn cố định)</label><input type="number" id="i6" min="1" max="10" step="0.5" data-info="secs" value="'+INFO.secs+'"></div></div>'+
    '<div class="meta">Xem trước:</div><div style="width:160px;aspect-ratio:9/16;position:relative;border-radius:12px;overflow:hidden;background:linear-gradient(160deg,#8a3a1f,#3b1c14);color:#fff"><div id="infoprev" style="position:absolute;inset:0">'+infoPrevHTML()+'</div></div></div>';
-}
-function qualitySettings(){
-  return '<div class="set"><b>Chất lượng video xuất</b><div><label class="lab" for="q1">Độ phân giải</label><select id="q1" data-q="res"><option value="720" '+(EXPQ.res==='720'?'selected':'')+'>720×1280 (nhanh, nhẹ, đủ cho TikTok)</option><option value="1080" '+(EXPQ.res==='1080'?'selected':'')+'>1080×1920 (nét hơn, file nặng, máy yếu có thể giật)</option></select></div><div class="meta">Thời gian xuất vẫn bằng đúng độ dài clip.</div></div>';
 }
 function folderSettings(){
   return '<div class="set"><b>Thư mục lưu clip</b><div class="meta">'+(S.dir?'Đang lưu vào: <b>'+esc(S.dir.name)+'</b>. Mỗi lần mở lại tool, lần xuất đầu Chrome có thể hỏi cấp quyền thư mục.':'Chưa chọn: clip xuất xong sẽ tải về thư mục Downloads.')+' Tên file tự đặt theo dạng MÃ_Gian_ngày-tháng. Nên tạo một thư mục riêng, đừng chọn Downloads hay Desktop vì Chrome thường chặn.</div>'+

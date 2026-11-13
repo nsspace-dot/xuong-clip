@@ -23,7 +23,7 @@ function clipToRec(c){
   if(c.music&&c.music.file)o.music=pickKeys(musCfg(c.music),MUS_KEYS);
   if(c.end&&(c.end.on||c.end.text))o.end=pickKeys(c.end,END_KEYS);
   if(c.capt)o.capt=String(c.capt);
-  if(c.out)o.out=pickKeys(c.out,['name','ext','mb']);
+  if(c.out)o.out=pickKeys(c.out,['name','ext','mb','txt']);
   if(c.voiceStale)o.voiceStale=true;if(c.created)o.created=c.created;if(c.ignored&&c.ignored.length)o.ignored=c.ignored.slice();if(c.posted){o.posted=true;if(c.postedAt)o.postedAt=c.postedAt}
   return o}
 function num(v){v=+v;return isFinite(v)?v:undefined}
@@ -43,10 +43,10 @@ function clipFromRec(o){
   if(o.cov)c.cov=pickKeys(o.cov,COV_KEYS);
   if(o.music&&o.music.file){c.music=pickKeys(musCfg(o.music),MUS_KEYS);c.music.file=String(o.music.file)}
   if(o.end&&typeof o.end==='object'){c.end=pickKeys(o.end,END_KEYS);c.end.on=!!o.end.on;c.end.dur=Math.max(1,Math.min(3,+o.end.dur||2));if(c.end.mode!=='last')c.end.mode='color'}
-  if(o.capt)c.capt=String(o.capt);if(o.out)c.out=pickKeys(o.out,['name','ext','mb']);if(o.voiceStale)c.voiceStale=true;
+  if(o.capt)c.capt=String(o.capt);if(o.out)c.out=pickKeys(o.out,['name','ext','mb','txt']);if(o.voiceStale)c.voiceStale=true;
   if(!c.lines.length)c.lines.push({t:'',need:'',seg:null,infos:[],choose:false});
   return c}
-function expToRec(x){return pickKeys(x,['id','clipId','fname','g','name','d','ext','date','cap','posted','savedIn'])}
+function expToRec(x){return pickKeys(x,['id','clipId','fname','txt','g','name','d','ext','res','mb','date','cap','posted','savedIn'])}
 function clipsState(){return {clips:CLIPS.map(clipToRec),clipsArchived:ARCH.map(clipToRec),clipsTrash:TRASH.map(clipToRec),exported:EXP.map(expToRec),info:pickKeys(INFO,['size','fg','bg','pos','mode','secs']),checkRules:chkToState().checkRules,checkCfg:chkToState().checkCfg,milestones:milesToState(),textStyles:tsToState()}}
 /* Nạp phần clip từ state.json. Clip đang có trong bộ nhớ (nạp trước khi chọn thư mục) được giữ lại và thêm vào. */
 function clipsFromState(o){

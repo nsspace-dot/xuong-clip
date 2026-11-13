@@ -28,6 +28,7 @@ js/
   look.js           Bộ lọc ảnh và khung hình; drawSrc() vẽ khung nguồn chung cho xem thử, xuất, ảnh bìa
   tl.js             Thanh thời gian nhiều tầng (Video, Giọng, Chữ, Nhạc), kéo thả, phím tắt
   tstyle.js         Kiểu chữ đã lưu (mặc định theo gian) và khung kết
+  queue.js          Xuất: chất lượng, ước tính dung lượng, mẫu tên file, file .txt kèm theo, caption, hàng đợi xuất nhiều clip
   music.js          Nhạc nền: nạp file, cắt / lặp, mờ vào / ra, hạ nhạc khi có giọng; musicAt() dùng chung cho nghe thử và xuất
   xuong.js          Tab Xưởng (mở mặc định): các trạm sản xuất, mốc hạn chót, lọc, xem theo người
   kbview.js         Tab Kịch bản: nạp theo đợt, trùng mã, lưu trữ đợt, xóa mềm
@@ -103,6 +104,15 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
   Vùng an toàn vẫn được kiểm theo đúng phông, cỡ, vị trí của kiểu.
 - **Khung kết** (mặc định tắt): 1–3 giây sau dòng cuối, nền một màu hoặc giữ khung hình cuối, thêm một dòng chữ.
   Chữ khung kết đi qua luật từ ngữ và vùng an toàn; tổng thời lượng clip tính cả khung kết. Xem thử vẽ bằng đúng hàm của file xuất.
+
+## Xuất
+
+- Chất lượng: 1080×1920 (mặc định) hoặc 720×1280, khung dọc 9:16; bitrate Nhẹ / Vừa / Cao. Dung lượng ước tính hiện trước khi xuất (bitrate × thời lượng, chỉ là ước lượng).
+- Tên file theo mẫu sửa được, mặc định `<mã>_<tên>` (tên clip rút gọn); dùng được `<mã> <tên> <gian> <sp> <ngày>`, tùy chọn thêm ngày xuất.
+  Tool bỏ dấu, bỏ ký tự lạ (chỉ giữ chữ không dấu, số, `_`, `-`) và thêm `-2`, `-3` khi trùng; không ghi đè file có sẵn.
+- Mỗi file xuất kèm file `.txt` cùng tên: toàn bộ lời thoại, chữ khung kết (nếu có) và caption / hashtag **do người dùng tự nhập** cho từng clip (lưu trong `state.json`, trường `capt`). Tool không tự viết caption. Có nút sao chép caption.
+- Tab **Clip đã xuất** › Xuất hàng loạt: chọn nhiều clip (mặc định chỉ clip không còn LỖI và chưa xuất; clip còn LỖI hiện "Bỏ qua" kèm lý do), xuất lần lượt, có tiến độ từng clip và tổng, hủy được (clip đang xuất dừng, không lưu file dở), một clip lỗi không làm dừng cả hàng, cuối cùng có bảng tổng kết.
+- Clip xuất xong vào trạm Đã xuất ở màn Xưởng.
 
 ## Màn Xưởng
 
