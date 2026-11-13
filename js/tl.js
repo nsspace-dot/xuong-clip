@@ -4,19 +4,19 @@
 S.tlz=(function(){try{var v=+localStorage.getItem('xuongclip_tlz');return v>0?v:0}catch(e){return 0}})(); // điểm ảnh mỗi giây, 0 = vừa khung
 S.tlKeys=false;
 var TLH={ruler:22,video:46,voice:58,text:34,music:26};
-function tlPps(c){var sc=document.getElementById('tlsc'),tot=Math.max(1,timeline(c));if(S.tlz)return Math.min(S.tlz,20000/tot);return Math.max(8,((sc?sc.clientWidth:900)-12)/tot)}
+function tlPps(c){var sc=document.getElementById('tlsc'),tot=Math.max(1,timeline(c)+endDur(c));if(S.tlz)return Math.min(S.tlz,20000/tot);return Math.max(8,((sc?sc.clientWidth:900)-12)/tot)}
 function tlHTML(c){
   return (S.wx?waveWide(c):'')+'<div class="tl" id="tl"><div class="tlbar"><b>Thanh thời gian</b><span class="tc" id="tltc">'+tc(S.t)+'</span>'+edOpts()+'<span class="sp"></span>'+
    '<span class="meta">Phóng</span><button class="btn xs" data-tl="zout" title="Thu nhỏ trục thời gian">−</button><button class="btn xs" data-tl="fit" title="Vừa khung">Vừa khung</button><button class="btn xs" data-tl="zin" title="Phóng to trục thời gian">+</button>'+
    '<button class="btn xs" data-tl="keys" title="Phím tắt (?)">Phím tắt</button></div>'+
-   '<div class="tlbody"><div class="tlheads"><div style="height:'+TLH.ruler+'px"></div><div class="tlhd" style="height:'+TLH.video+'px">Video</div><div class="tlhd" style="height:'+TLH.voice+'px">Giọng</div><div class="tlhd" style="height:'+TLH.text+'px">Chữ</div><div class="tlhd off" style="height:'+TLH.music+'px">Nhạc</div></div>'+
+   '<div class="tlbody"><div class="tlheads"><div style="height:'+TLH.ruler+'px"></div><div class="tlhd" style="height:'+TLH.video+'px">Video</div><div class="tlhd" style="height:'+TLH.voice+'px">Giọng</div><div class="tlhd" style="height:'+TLH.text+'px">Chữ</div><div class="tlhd" style="height:'+TLH.music+'px">Nhạc</div></div>'+
    '<div class="tlsc" id="tlsc"><div class="tlin" id="tlin"></div></div></div></div>'+(S.tlKeys?tlKeysHTML():'')}
 function tlKeysHTML(){var k=[['Space','Phát / dừng'],['← →','Lùi / tới một khung hình'],['Shift + ← →','Lùi / tới 1 giây'],['[  ]','Dòng trước / dòng sau'],['I','Đặt điểm đầu đoạn video của dòng đang chọn tại kim chạy'],['O','Đặt điểm cuối đoạn video của dòng đang chọn tại kim chạy'],['?','Bật / tắt bảng này'],['Esc','Đóng bảng, thoát toàn màn hình']];
   return '<div class="tlkeys" id="tlkeys" role="dialog" aria-label="Phím tắt"><div class="tlkb"><b>Phím tắt</b><table>'+k.map(function(x){return '<tr><td><kbd>'+x[0]+'</kbd></td><td>'+x[1]+'</td></tr>'}).join('')+'</table><div class="meta">Không bắt phím khi đang gõ trong ô nhập.</div><div class="bar"><button class="btn sm" data-tl="keys">Đóng</button></div></div></div>'}
 /* Dựng nội dung theo độ rộng hiện tại (gọi sau mỗi lần vẽ màn Ghép clip). */
 function tlBuild(){
   var c=clip(S.cur),inn=document.getElementById('tlin');if(!c||!inn)return;
-  var tot=timeline(c),pps=tlPps(c),W=Math.ceil(tot*pps)+40,H=TLH.ruler+TLH.video+TLH.voice+TLH.text+TLH.music,X=function(t){return Math.round(t*pps)},h='';
+  var tot0=timeline(c),tot=tot0+endDur(c),pps=tlPps(c),W=Math.ceil(tot*pps)+40,H=TLH.ruler+TLH.video+TLH.voice+TLH.text+TLH.music,X=function(t){return Math.round(t*pps)},h='';
   inn.style.width=W+'px';inn.style.height=H+'px';inn._pps=pps;
   var cur=c.lines[S.li]||c.lines[0];h+='<div class="tlsel" style="left:'+X(cur.s)+'px;width:'+Math.max(2,X(cur.e)-X(cur.s))+'px"></div>';
   var step=pps>=120?0.5:pps>=40?1:pps>=16?2:5,rul='';for(var t=0;t<=tot+0.001;t+=step){var big=Math.abs(t/ (step*2)-Math.round(t/(step*2)))<1e-6;rul+='<span class="tk'+(big?' b':'')+'" style="left:'+X(t)+'px">'+(big?tc(t).replace(/\.0$/,''):'')+'</span>'}
@@ -27,6 +27,7 @@ function tlBuild(){
       if(sg.strip)st='background-image:url('+sg.strip+');background-size:'+bgW+'px 100%;background-position:'+(-(l.segIn||0)/d*bgW)+'px 0;'}
     v+='<div class="tlv'+(i===S.li?' cur':'')+(sg?'':' miss')+' lv-'+lv+'" data-tlv="'+i+'" style="left:'+x0+'px;width:'+w+'px;'+st+'" title="Dòng '+(i+1)+': '+esc(sg?sg.label+' · nguồn '+tc(l.segIn||0)+(l.segOut?' – '+tc(l.segOut):''):'chưa có cảnh')+'">'+
      '<span class="tlvl">'+(i+1)+(sg?'':' · thiếu cảnh')+'</span>'+(sg?'<span class="hd l" data-tlh="L|'+i+'" title="Kéo để đổi điểm đầu đoạn video"></span><span class="hd r" data-tlh="R|'+i+'" title="Kéo để đổi điểm cuối đoạn video"></span>':'')+'</div>'});
+  if(endOn(c))v+='<div class="tlv tle" style="left:'+X(tot0)+'px;width:'+Math.max(4,X(tot)-X(tot0))+'px" title="Khung kết '+fmt1(endDur(c))+'s"><span class="tlvl">Kết</span></div>';
   h+='<div class="tlt" style="top:'+y+'px;height:'+TLH.video+'px">'+v+'</div>';y+=TLH.video;
   // tầng giọng
   var g='<canvas id="tlwave" width="'+Math.min(W,20000)+'" height="'+TLH.voice+'"></canvas>';
@@ -38,7 +39,7 @@ function tlBuild(){
   var tx='';c.lines.forEach(function(l,i){l.infos.forEach(function(x,k){if(!infoOk(x))return;var sp=infoSpan(l,x);if(!sp)return;var x0=X(sp.a),w=Math.max(10,X(sp.b)-x0);
     tx+='<div class="tlx'+(i===S.li?' cur':'')+'" data-tlx="'+i+'|'+k+'" style="left:'+x0+'px;width:'+w+'px;top:'+(3+(k%2)*13)+'px" title="Dòng '+(i+1)+': '+esc(x.x)+' · '+tc(sp.a)+' – '+tc(sp.b)+'. Kéo để đổi thời điểm hiện, kéo mép phải để đổi độ dài">'+esc(x.x)+'<span class="hd r" data-tlxr="'+i+'|'+k+'"></span></div>'})});
   h+='<div class="tlt" style="top:'+y+'px;height:'+TLH.text+'px">'+tx+'</div>';y+=TLH.text;
-  h+='<div class="tlt music" style="top:'+y+'px;height:'+TLH.music+'px"><span class="tlnone">Nhạc nền: sẽ có ở bước sau</span></div>';
+  h+='<div class="tlt music" style="top:'+y+'px;height:'+TLH.music+'px">'+tlMusicHTML(c,X)+'</div>';
   h+='<div class="tlph" id="tlph" style="left:'+X(S.t)+'px"><span></span></div>';
   inn.innerHTML=h;tlWave(c);
 }
@@ -55,7 +56,7 @@ function tlSync(c,t){var ph=document.getElementById('tlph'),inn=document.getElem
   if(!ph||!inn)return;var x=t*inn._pps;ph.style.left=x+'px';
   if(S.play&&sc&&(x<sc.scrollLeft+20||x>sc.scrollLeft+sc.clientWidth-40))sc.scrollLeft=Math.max(0,x-sc.clientWidth*0.3)}
 function tlLineAt(c,t){var l=c.lines.filter(function(x){return t>=x.s&&t<x.e})[0];return l?c.lines.indexOf(l):(t>0?c.lines.length-1:0)}
-function tlSeek(c,t,sel){var tot=timeline(c);S.t=Math.max(0,Math.min(tot,t));var li=tlLineAt(c,S.t);if(S.play){stop()}
+function tlSeek(c,t,sel){var tot=timeline(c)+endDur(c);S.t=Math.max(0,Math.min(tot,t));var li=tlLineAt(c,S.t);if(S.play){stop()}
   if(sel!==false&&li!==S.li){S.li=li;render()}else{var sb=document.getElementById('scrub');if(sb)sb.value=S.t;drawPhone()}}
 afterGhep=(function(f){return function(){f.apply(this,arguments);tlBuild()}})(afterGhep);
 window.addEventListener('resize',function(){if(S.tab==='ghep'&&!S.tlz)tlBuild()});
@@ -69,6 +70,7 @@ document.addEventListener('pointerdown',function(e){
   else if(d.tlb){var k=+d.tlb;TLD={k:'B',i:k,b0:abounds(c)[k],x0:e.clientX,moved:false}}
   else if((el=e.target.closest('[data-tlx]'))){var q=el.dataset.tlx.split('|'),ll=c.lines[+q[0]],x=ll.infos[+q[1]],sp=infoSpan(ll,x);if(!sp)return;
     TLD={k:d.tlxr?'XR':'X',i:+q[0],x:x,l:ll,el:el,a0:sp.a,b0:sp.b,x0:e.clientX,moved:false}}
+  else if(e.target.closest('[data-tlm]')&&c.music){var m=musCfg(c.music),r=musSpan(c,m);TLD={k:d.tlmr?'MR':'M',s0:r.a,len0:r.b-r.a,x0:e.clientX,moved:false}}
   else{TLD={k:'SEEK',x0:e.clientX,t:t0,moved:false};var v=e.target.closest('[data-tlv]');if(v)TLD.li=+v.dataset.tlv}
   TLD.c=c;TLD.pps=pps;try{e.target.setPointerCapture(e.pointerId)}catch(x){}e.preventDefault()});
 document.addEventListener('pointermove',function(e){var g=TLD;if(!g)return;var dt=(e.clientX-g.x0)/g.pps;if(Math.abs(e.clientX-g.x0)>2)g.moved=true;if(!g.moved)return;
@@ -79,6 +81,8 @@ document.addEventListener('pointermove',function(e){var g=TLD;if(!g)return;var d
   else if(g.k==='B'){setBound(g.c,g.i,g.b0+dt);tipT='Ranh giới giọng: '+tc(abounds(g.c)[g.i])}
   else if(g.k==='X'){var off=Math.max(0,Math.min(g.l.e-g.l.s-0.3,Math.round((g.a0-g.l.s+dt)*10)/10));g.x.off=off;g.el.style.left=Math.round((g.l.s+off)*g.pps)+'px';tipT='Chữ hiện lúc '+tc(g.l.s+off)}
   else if(g.k==='XR'){var len=Math.max(0.5,Math.round((g.b0-g.a0+dt)*10)/10);g.x.len=len;g.el.style.width=Math.round(len*g.pps)+'px';tipT='Chữ ở lại '+fmt1(len)+'s'}
+  else if(g.k==='M'){var tt=clipTotal(g.c),ns=Math.max(0,Math.min(tt-0.5,Math.round((g.s0+dt)*10)/10));g.c.music.start=ns;if(g.c.music.len>0)g.c.music.len=Math.min(g.c.music.len,Math.max(0.5,tt-ns));tipT='Nhạc bắt đầu lúc '+tc(ns)}
+  else if(g.k==='MR'){var nl=Math.max(0.5,Math.min(clipTotal(g.c)-g.s0,Math.round((g.len0+dt)*10)/10));g.c.music.len=nl;tipT='Nhạc dài '+fmt1(nl)+'s'}
   else if(g.k==='SEEK'){tlSeek(g.c,g.t+dt,false);return}
   if(g.k!=='X'&&g.k!=='XR'){tlBuild();drawPhone()}else drawPhone();
   var lb=document.getElementById('tltc');if(lb)lb.textContent=tipT});

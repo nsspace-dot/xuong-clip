@@ -58,13 +58,13 @@ function findHits(text,c){
 
 /* ---------- vùng an toàn: hộp chữ tính như lúc xuất (drawTextBox, khung 720×1280) ---------- */
 var CHKCV=null;
-function infoRect(x){var W=720,H=1280,fs=x.sz||INFO.size,pp=infoPos(x),cx=pp.px*W,cy=pp.py*H;
-  if(!CHKCV)CHKCV=document.createElement('canvas').getContext('2d');var ctx=CHKCV;ctx.font='700 '+fs+'px "Be Vietnam Pro",system-ui,sans-serif';
+function infoRect(x,c){var W=720,H=1280,L=infoLook(x,c),fs=x.sz||L.size,pp=infoPos(x,c),cx=pp.px*W,cy=pp.py*H;
+  if(!CHKCV)CHKCV=document.createElement('canvas').getContext('2d');var ctx=CHKCV;ctx.font='700 '+fs+'px '+L.font;
   var ls=[],maxW=W*0.9-fs*1.2;String(x.x).split('\n').forEach(function(p){wrapText(ctx,p,maxW).forEach(function(q){ls.push(q)})});
   var lh=fs*1.24,mw=0;ls.forEach(function(q){mw=Math.max(mw,ctx.measureText(q).width)});
   var bw=Math.min(W*0.98,mw+fs*1.2),bh=ls.length*lh+fs*0.7,bx=Math.min(Math.max(cx-bw/2,W*0.01),W*0.99-bw),by=Math.min(Math.max(cy-bh/2,H*0.005),H*0.995-bh);
   return {l:bx/W,t:by/H,r:(bx+bw)/W,b:(by+bh)/H}}
-function safeOut(x){var r=infoRect(x),s=CHK.safe,o=[];if(r.t<s.t/100)o.push('mép trên');if(r.b>1-s.b/100)o.push('mép dưới');if(r.l<s.l/100)o.push('mép trái');if(r.r>1-s.r/100)o.push('mép phải');return o}
+function safeOut(x,c){var r=infoRect(x,c),s=CHK.safe,o=[];if(r.t<s.t/100)o.push('mép trên');if(r.b>1-s.b/100)o.push('mép dưới');if(r.l<s.l/100)o.push('mép trái');if(r.r>1-s.r/100)o.push('mép phải');return o}
 
 /* ---------- kiểm tra một clip ---------- */
 var CHKGEN=0,CHKC={};
@@ -74,7 +74,7 @@ function checkClip(c){
   var memo=CHKC[c.id];if(memo&&memo.gen===CHKGEN&&memo.c===c)return memo.r;
   var it=[],add=function(lvl,i,code,title,detail){it.push({lvl:lvl,i:i,code:code,title:title,detail:detail||'',key:code+'|'+i+'|'+(detail||title)})};
   if(isDirect(c)){var r0={all:[],errs:[],warns:[],ignored:[]};CHKC[c.id]={gen:CHKGEN,c:c,r:r0};return r0}
-  var tot=timeline(c),on=CHK.on,N=c.lines.length;
+  var tot=timeline(c)+endDur(c),on=CHK.on,N=c.lines.length;
   if(on.total&&(tot<CHK.minTotal-0.05||tot>CHK.maxTotal+0.05))add('err',-1,'total','Tổng thời lượng '+fmt1(tot)+'s, cần '+CHK.minTotal+'–'+CHK.maxTotal+'s');
   if(on.novoice){if(c.audio&&c.audioMissing)add('err',-1,'novoice','File giọng '+c.audio.file+' không còn, cần tạo lại giọng');
     else if(!c.audioUrl)add('err',-1,'novoice','Clip chưa có giọng đọc (tạo giọng hoặc tải file giọng)')}
@@ -90,11 +90,13 @@ function checkClip(c){
     l.infos.forEach(function(x){if(!infoOk(x))return;
       findHits(x.x,c).forEach(function(h){add(h.r.lvl,i,'word',ruleName(h.r)+' trong chữ hiện: "'+h.m+'"'+(h.r.note&&!h.r.pat?' ('+h.r.note+')':''),h.r.id+':chữ:'+h.m)});
       var ph=(x.ph||x.x||'').trim();if(on.infomis&&ph&&l.t.toLowerCase().indexOf(ph.toLowerCase())<0)add('err',i,'infomis','Chữ hiện "'+x.x+'" lệch lời: cụm "'+ph+'" không có trong lời dòng này',x.x+'='+ph);
-      if(on.safe){var so=safeOut(x);if(so.length)add('warn',i,'safe','Chữ hiện "'+x.x+'" ra ngoài vùng an toàn ('+so.join(', ')+')',x.x)}});
+      if(on.safe){var so=safeOut(x,c);if(so.length)add('warn',i,'safe','Chữ hiện "'+x.x+'" ra ngoài vùng an toàn ('+so.join(', ')+')',x.x)}});
     if(l.dm>0&&l.ae!=null&&l.dm<(l.ae-l.as)-0.05)add('warn',i,'cut','Giọng dài '+fmt1(l.ae-l.as)+'s, bạn nhập '+fmt1(l.dm)+'s, sẽ bị cắt '+fmt1(l.ae-l.as-l.dm)+'s');
     if(l.seg&&!lineLost(l)){var u=dupsOf(c,i);if(u.length)add('warn',i,'dup','Đoạn này cũng dùng ở '+u.map(useText).join('; '));
       if((seg(l.seg)||{}).o==='đã đăng')add('warn',i,'posted','Đoạn lấy từ clip đã đăng, dễ bị coi là nội dung lặp')}
   });
+  if(endOn(c)){var eo=endObj(c);if(infoOk(eo)){findHits(eo.x,c).forEach(function(h){add(h.r.lvl,-1,'word',ruleName(h.r)+' trong chữ khung kết: "'+h.m+'"'+(h.r.note&&!h.r.pat?' ('+h.r.note+')':''),h.r.id+':kết:'+h.m)});
+    if(on.safe){var se=safeOut(eo,c);if(se.length)add('warn',-1,'safe','Chữ khung kết "'+eo.x+'" ra ngoài vùng an toàn ('+se.join(', ')+')','kết:'+eo.x)}}}
   if(on.cta&&N&&CHK.cta.trim()&&foldText(c.lines[N-1].t).indexOf(foldText(CHK.cta.trim()))<0)add('warn',N-1,'cta','Dòng cuối chưa có lời kêu gọi "'+CHK.cta.trim()+'"');
   var ig=c.ignored||[],r={all:it,errs:it.filter(function(x){return x.lvl==='err'}),warns:it.filter(function(x){return x.lvl==='warn'&&ig.indexOf(x.key)<0}),ignored:it.filter(function(x){return x.lvl==='warn'&&ig.indexOf(x.key)>=0})};
   CHKC[c.id]={gen:CHKGEN,c:c,r:r};return r}

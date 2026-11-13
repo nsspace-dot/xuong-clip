@@ -60,7 +60,7 @@ function suggestSettings(){
 function vCaidat(){
   return '<h1>Cài đặt</h1><p class="sub">Chỉnh người phụ trách, danh mục sản phẩm, quy tắc gắn nhãn, chữ thông tin, thư mục lưu clip, giọng Gemini và bảng luật. Thay đổi được nhớ trong trình duyệt này.</p>'+
   gemSettings()+checkRulesSettings()+checkFormSettings()+safeSettings()+
-  peopleSettings()+catalogSettings()+rulesSettings()+suggestSettings()+infoSettings()+folderSettings()+deletedSettings()+qualitySettings()+'<div class="set"><div class="meta">Chưa có: nhạc nền, logo từng gian.</div></div>';
+  peopleSettings()+catalogSettings()+rulesSettings()+suggestSettings()+infoSettings()+folderSettings()+deletedSettings()+qualitySettings()+tsSettings()+'<div class="set"><div class="meta">Chưa có: logo từng gian. Nhạc nền chọn riêng cho từng clip ở màn Ghép clip.</div></div>';
 }
 function infoSettings(){
   var pos=[['top','Phía trên'],['mid','Giữa'],['bottom','Phía dưới']],md=[['line','Đến hết câu thoại'],['secs','Một số giây cố định']];
@@ -128,7 +128,7 @@ function audSync(c,force){var l=c.lines[S.li];if(!S.aud||!l||l.as==null)return;
   if(S.audLi!==S.li||force){S.audLi=S.li;try{S.aud.currentTime=Math.min(l.ae,l.as+Math.max(0,S.t-l.s))}catch(x){}S.aud.play().catch(function(){})}
   else if(!S.aud.paused&&S.aud.currentTime>=l.ae-0.02){S.aud.pause()}}
 function startPlay(c){
-  var tot=timeline(c);if(S.stopAt==null&&S.t>=tot-0.1){S.t=0;S.li=0}
+  var tot=timeline(c)+endDur(c);if(S.stopAt==null&&S.t>=tot-0.1){S.t=0;S.li=0}
   var man=manualDur(c),l0=c.lines.filter(function(x){return S.t>=x.s&&S.t<x.e})[0];if(l0)S.li=c.lines.indexOf(l0);
   S.play=true;S.lastLi=-1;S.audLi=-1;S.mode=(S.tts&&window.speechSynthesis&&!c.audioUrl)?'tts':'timer';
   if(c.audioUrl){S.aud=new Audio(c.audioUrl);if(man){audSync(c,true)}else{try{S.aud.currentTime=Math.max(0,S.t)}catch(x){}S.aud.play().catch(function(){})}}

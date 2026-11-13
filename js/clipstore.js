@@ -6,7 +6,8 @@
    rồi dùng chung cơ chế ghi trễ 1,5 giây của source.js. Kéo thanh trượt chỉ ghi khi thả. */
 var ARCH=[],TRASH=[];
 var LINE_KEYS=['t','need','seg','segIn','segOut','lock','tr','spd','dm','dd','fill','why','flt','fx'];
-var INFO_KEYS=['x','ph','off','len','sz','px','py'];
+var INFO_KEYS=['x','ph','off','len','sz','px','py','st'];
+var END_KEYS=['on','dur','mode','color','text','st'];
 var COV_KEYS=['li','tm','text','px','py','sz','fg','bg','nobg'];
 var BIG_STATE=5*1024*1024;
 
@@ -19,6 +20,9 @@ function clipToRec(c){
   if(c.audio)o.audio=pickKeys(c.audio,['file','model','voice','src','name','at']);
   if(c.audio&&c.audioDur)o.audioDur=Math.round(c.audioDur*1000)/1000;
   if(c.cov)o.cov=pickKeys(c.cov,COV_KEYS);
+  if(c.music&&c.music.file)o.music=pickKeys(musCfg(c.music),MUS_KEYS);
+  if(c.end&&(c.end.on||c.end.text))o.end=pickKeys(c.end,END_KEYS);
+  if(c.capt)o.capt=String(c.capt);
   if(c.out)o.out=pickKeys(c.out,['name','ext','mb']);
   if(c.voiceStale)o.voiceStale=true;if(c.created)o.created=c.created;if(c.ignored&&c.ignored.length)o.ignored=c.ignored.slice();if(c.posted){o.posted=true;if(c.postedAt)o.postedAt=c.postedAt}
   return o}
@@ -30,17 +34,20 @@ function clipFromRec(o){
       ['segIn','segOut','spd','dm','dd'].forEach(function(k){var v=num(r[k]);if(v!==undefined)l[k]=v});
       if(r.lock)l.lock=true;['tr','fill','why'].forEach(function(k){if(r[k])l[k]=String(r[k])});
       if(r.flt&&typeof r.flt==='object'){var f0=lineFlt(r);if(!fltZero(f0))l.flt=f0}if(r.fx&&typeof r.fx==='object'){var x0=lineFx(r);if(!fxZero(x0))l.fx=x0}
-      l.infos=(Array.isArray(r.infos)?r.infos:[]).map(function(x){x=x||{};var i={x:String(x.x==null?'':x.x),ph:String(x.ph||'')};['off','len','sz','px','py'].forEach(function(k){var v=num(x[k]);if(v!==undefined)i[k]=v});return i});
+      l.infos=(Array.isArray(r.infos)?r.infos:[]).map(function(x){x=x||{};var i={x:String(x.x==null?'':x.x),ph:String(x.ph||'')};if(x.st)i.st=String(x.st);['off','len','sz','px','py'].forEach(function(k){var v=num(x[k]);if(v!==undefined)i[k]=v});return i});
       return l})};
   if(Array.isArray(o.bounds))c.bounds=o.bounds.map(Number);if(o.bManual)c.bManual=true;if(o.alignInfo)c.alignInfo=String(o.alignInfo);
   if(o.audio&&o.audio.file){c.audio=pickKeys(o.audio,['file','model','voice','src','name','at']);c.audioDur=num(o.audioDur)||null}
   if(Array.isArray(o.ignored))c.ignored=o.ignored.map(String);
   if(o.posted){c.posted=true;if(o.postedAt)c.postedAt=String(o.postedAt)}
-  if(o.cov)c.cov=pickKeys(o.cov,COV_KEYS);if(o.out)c.out=pickKeys(o.out,['name','ext','mb']);if(o.voiceStale)c.voiceStale=true;
+  if(o.cov)c.cov=pickKeys(o.cov,COV_KEYS);
+  if(o.music&&o.music.file){c.music=pickKeys(musCfg(o.music),MUS_KEYS);c.music.file=String(o.music.file)}
+  if(o.end&&typeof o.end==='object'){c.end=pickKeys(o.end,END_KEYS);c.end.on=!!o.end.on;c.end.dur=Math.max(1,Math.min(3,+o.end.dur||2));if(c.end.mode!=='last')c.end.mode='color'}
+  if(o.capt)c.capt=String(o.capt);if(o.out)c.out=pickKeys(o.out,['name','ext','mb']);if(o.voiceStale)c.voiceStale=true;
   if(!c.lines.length)c.lines.push({t:'',need:'',seg:null,infos:[],choose:false});
   return c}
 function expToRec(x){return pickKeys(x,['id','clipId','fname','g','name','d','ext','date','cap','posted','savedIn'])}
-function clipsState(){return {clips:CLIPS.map(clipToRec),clipsArchived:ARCH.map(clipToRec),clipsTrash:TRASH.map(clipToRec),exported:EXP.map(expToRec),info:pickKeys(INFO,['size','fg','bg','pos','mode','secs']),checkRules:chkToState().checkRules,checkCfg:chkToState().checkCfg,milestones:milesToState()}}
+function clipsState(){return {clips:CLIPS.map(clipToRec),clipsArchived:ARCH.map(clipToRec),clipsTrash:TRASH.map(clipToRec),exported:EXP.map(expToRec),info:pickKeys(INFO,['size','fg','bg','pos','mode','secs']),checkRules:chkToState().checkRules,checkCfg:chkToState().checkCfg,milestones:milesToState(),textStyles:tsToState()}}
 /* Nạp phần clip từ state.json. Clip đang có trong bộ nhớ (nạp trước khi chọn thư mục) được giữ lại và thêm vào. */
 function clipsFromState(o){
   var mem=SRCF.clipsLoaded?[]:CLIPS.slice(),memExp=SRCF.clipsLoaded?[]:EXP.slice();
@@ -50,13 +57,14 @@ function clipsFromState(o){
   (Array.isArray(o.clipsTrash)?o.clipsTrash:[]).forEach(function(r){var c=clipFromRec(r);if(c)TRASH.push(c)});
   (Array.isArray(o.exported)?o.exported:[]).forEach(function(x){if(x&&x.id)EXP.push(expToRec(x))});
   milesFromState(o); // mốc hạn chót (version 5)
+  tsFromState(o); // kiểu chữ đã lưu (version 6)
   chkFromState(o); // luật kiểm tra (version 4); không có thì dùng luật mặc định
   if(o.info&&typeof o.info==='object')['size','fg','bg','pos','mode','secs'].forEach(function(k){if(o.info[k]!=null)INFO[k]=o.info[k]});
   var added=0;mem.forEach(function(c){if(!clipById(c.id)){CLIPS.push(c);added++}else{c.id=uniqueClipId(c.id);CLIPS.push(c);added++}});
   memExp.forEach(function(x){if(!EXP.some(function(y){return y.id===x.id}))EXP.push(x)});
   SRCF.clipsLoaded=true;S.clipUndo=null;
   return added}
-function clipsReset(){if(!SRCF.clipsLoaded)return;CLIPS=[];ARCH=[];TRASH=[];EXP=[];S.edit=null;S.cur=null;S.clipUndo=null;S.imp=null;SRCF.clipsLoaded=false;CLIPSIG=''}
+function clipsReset(){if(!SRCF.clipsLoaded)return;TS={list:[],byGian:{}};CLIPS=[];ARCH=[];TRASH=[];EXP=[];S.edit=null;S.cur=null;S.clipUndo=null;S.imp=null;SRCF.clipsLoaded=false;CLIPSIG=''}
 function clipById(id){return CLIPS.concat(ARCH,TRASH).filter(function(c){return c.id===id})[0]||null}
 function uniqueClipId(id){if(!clipById(id))return id;for(var k=2;;k++){var n=id+'-'+k;if(!clipById(n))return n}}
 
@@ -80,16 +88,25 @@ function setClipAudio(c,file,meta){
 async function writeBlob(dir,name,blob){var fh=await dir.getFileHandle(name,{create:true}),w=await fh.createWritable();try{await w.write(blob);await w.close()}catch(e){try{await w.abort()}catch(x){}throw e}}
 /* Gọi từ srcSave trước khi ghi state.json. */
 async function writePendingAudio(){
-  var list=CLIPS.concat(ARCH,TRASH).filter(function(c){return c.audioPending&&c.audioFile&&c.audio&&c.audio.file});if(!list.length)return;
+  var all=CLIPS.concat(ARCH,TRASH),list=all.filter(function(c){return c.audioPending&&c.audioFile&&c.audio&&c.audio.file}),ml=all.filter(function(c){return c.musicPending&&c.musicFile&&c.music&&c.music.file});if(!list.length&&!ml.length)return;
   var ad=await (await xdir()).getDirectoryHandle('audio',{create:true});
-  for(var i=0;i<list.length;i++){var c=list[i];await writeBlob(ad,c.audio.file.split('/').pop(),c.audioFile);c.audioPending=false}}
+  for(var i=0;i<list.length;i++){var c=list[i];await writeBlob(ad,c.audio.file.split('/').pop(),c.audioFile);c.audioPending=false}
+  for(var j=0;j<ml.length;j++){var m=ml[j];await writeBlob(ad,m.music.file.split('/').pop(),m.musicFile);m.musicPending=false}}
 /* Mở lại: nạp file giọng từ đĩa, không gọi API. Không còn file thì đánh dấu "cần tạo lại giọng". */
 async function loadClipAudio(){
-  var list=CLIPS.concat(ARCH,TRASH).filter(function(c){return c.audio&&c.audio.file&&!c.audioFile});if(!list.length)return;
+  var list=CLIPS.concat(ARCH,TRASH).filter(function(c){return c.audio&&c.audio.file&&!c.audioFile});if(!list.length)return loadClipMusic();
   var x=await xdir(),ad=null;try{ad=await x.getDirectoryHandle('audio')}catch(e){}
   for(var i=0;i<list.length;i++){var c=list[i];
     try{if(!ad)throw new Error('no dir');var f=await (await ad.getFileHandle(c.audio.file.split('/').pop())).getFile();c.audioFile=f;c.audioUrl=URL.createObjectURL(f);c.audioMissing=false}
-    catch(e){if(isPermErr(e))throw e;c.audioMissing=true}}}
+    catch(e){if(isPermErr(e))throw e;c.audioMissing=true}}
+  await loadClipMusic()}
+/* Nhạc nền: nạp lại file từ .xuongclip/audio. */
+async function loadClipMusic(){
+  var list=CLIPS.concat(ARCH,TRASH).filter(function(c){return c.music&&c.music.file&&!c.musicFile});if(!list.length)return;
+  var x=await xdir(),ad=null;try{ad=await x.getDirectoryHandle('audio')}catch(e){}
+  for(var i=0;i<list.length;i++){var c=list[i];
+    try{if(!ad)throw new Error('no dir');var f=await (await ad.getFileHandle(c.music.file.split('/').pop())).getFile();c.musicFile=f;c.musicUrl=URL.createObjectURL(f);c.musicMissing=false}
+    catch(e){if(isPermErr(e))throw e;c.musicMissing=true}}}
 
 /* ---------- đợt, nạp kịch bản thêm vào, xóa mềm ---------- */
 function weekLabel(d){d=d||new Date();var m=new Date(d.getFullYear(),d.getMonth(),d.getDate()-((d.getDay()+6)%7)),e=new Date(m.getFullYear(),m.getMonth(),m.getDate()+6),p=function(n){return ('0'+n).slice(-2)};

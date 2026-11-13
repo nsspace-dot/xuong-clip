@@ -27,6 +27,8 @@ js/
   editor.js         Màn Ghép clip kiểu phòng dựng: thanh trên, thư viện, danh sách dòng, Inspector
   look.js           Bộ lọc ảnh và khung hình; drawSrc() vẽ khung nguồn chung cho xem thử, xuất, ảnh bìa
   tl.js             Thanh thời gian nhiều tầng (Video, Giọng, Chữ, Nhạc), kéo thả, phím tắt
+  tstyle.js         Kiểu chữ đã lưu (mặc định theo gian) và khung kết
+  music.js          Nhạc nền: nạp file, cắt / lặp, mờ vào / ra, hạ nhạc khi có giọng; musicAt() dùng chung cho nghe thử và xuất
   xuong.js          Tab Xưởng (mở mặc định): các trạm sản xuất, mốc hạn chót, lọc, xem theo người
   kbview.js         Tab Kịch bản: nạp theo đợt, trùng mã, lưu trữ đợt, xóa mềm
   libview.js        Tab Thư viện (lọc, chọn nhiều, gắn hàng loạt, hoàn tác) và phần danh mục / quy tắc ở Cài đặt
@@ -47,9 +49,11 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
   state.json        version 6: library, deleted, products, rules, mergeSkip (thư viện)
                     clips, clipsArchived, clipsTrash, exported, info (kịch bản, clip đang ghép, clip đã xuất)
                     checkRules, checkCfg (luật kiểm tra, ngưỡng, vùng an toàn), milestones (hạn chót)
+                    textStyles (kiểu chữ đã lưu, kiểu mặc định theo gian)
   state.bak.json    bản state.json trước lần ghi gần nhất
   state.v<N>.bak.json   bản trước khi nâng version (giữ lâu dài)
   audio/<mã clip>.wav   giọng đọc đã tạo hoặc tải lên
+  audio/<mã clip>.nhac.<đuôi>   nhạc nền người dùng nạp cho clip
   lock.json         khóa chống hai tab / hai máy cùng ghi (hết hạn sau 2 phút không cập nhật)
   state.corrupt-<giờ>.json   chỉ có khi state.json bị hỏng
 ```
@@ -86,6 +90,19 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
 - Mỗi dòng có bộ lọc nhẹ (độ sáng, tương phản, bão hòa, sắc nét) và khung (lấp đầy / vừa khung 9:16, phóng 1–3×, kéo lệch trên khung xem thử). Mặc định "Giữ màu gốc": không xử lý gì thêm.
 - Khung xem thử vẽ bằng đúng hàm `drawSrc()` mà file xuất dùng, nên xem thử và xuất giống hệt.
 - Áp cho tất cả dòng của clip hoặc cho các clip đã chọn (hỏi xác nhận, hoàn tác được một lần).
+
+## Nhạc nền, kiểu chữ, khung kết
+
+- **Nhạc nền**: người dùng tự nạp file (mp3, m4a, wav) cho từng clip; tự chọn nhạc có bản quyền phù hợp, tool không kèm nhạc.
+  File chép vào `.xuongclip/audio`, `state.json` chỉ giữ đường dẫn và thông số. Chỉnh ở Inspector › Nhạc nền hoặc kéo khối nhạc trên tầng Nhạc:
+  điểm bắt đầu trên clip, độ dài (trống = đến hết), bắt đầu từ giây nào của bài, bài ngắn hơn thì lặp hoặc phát một lần, mờ vào / mờ ra.
+- Hạ nhạc khi có giọng: hai mức âm lượng riêng (không có giọng / khi có giọng), chuyển mức trong 0,25 giây quanh mỗi đoạn có giọng.
+  Nghe thử (nút Phát) và file xuất dùng chung hàm `musicAt()` nên âm lượng như nhau.
+- **Kiểu chữ**: tên, phông (chỉ phông có sẵn trên máy: Arial, Tahoma, Verdana, Trebuchet MS, Times New Roman, Georgia hoặc mặc định), cỡ, màu, viền, đổ bóng, nền, vị trí.
+  Áp cho một chữ (ô chọn cạnh chữ) hoặc mọi chữ của clip bằng một lần bấm. Mỗi gian có thể có một kiểu mặc định, chữ mới thêm nhận kiểu đó.
+  Vùng an toàn vẫn được kiểm theo đúng phông, cỡ, vị trí của kiểu.
+- **Khung kết** (mặc định tắt): 1–3 giây sau dòng cuối, nền một màu hoặc giữ khung hình cuối, thêm một dòng chữ.
+  Chữ khung kết đi qua luật từ ngữ và vùng an toàn; tổng thời lượng clip tính cả khung kết. Xem thử vẽ bằng đúng hàm của file xuất.
 
 ## Màn Xưởng
 

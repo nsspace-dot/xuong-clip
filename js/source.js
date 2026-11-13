@@ -148,7 +148,7 @@ async function loadState(){
   }
   SRCF.fileSavedAt=Date.parse(use.savedAt)||0; // giờ ghi gần nhất trong file, cho chỉ báo "Đã lưu" lúc vừa mở
   var v=+use.version||1;SRCF.newer=v>STATE_VER?v:0;SRCF.extra={};
-  for(var k in use)if(['version','savedAt','library','deleted','products','rules','mergeSkip','clips','clipsArchived','clipsTrash','exported','info','checkRules','checkCfg','milestones'].indexOf(k)<0)SRCF.extra[k]=use[k];
+  for(var k in use)if(['version','savedAt','library','deleted','products','rules','mergeSkip','clips','clipsArchived','clipsTrash','exported','info','checkRules','checkCfg','milestones','textStyles'].indexOf(k)<0)SRCF.extra[k]=use[k];
   LIB={};(use.library||[]).forEach(function(o){if(o&&o.id&&o.path){var r=fromRec(o);LIB[r.id]=r}});
   SRCF.deleted=[];(Array.isArray(use.deleted)?use.deleted:[]).forEach(function(id){id=String(id);if(!isDel(id))SRCF.deleted.push(id)});
   catalogFromState(use);

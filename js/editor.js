@@ -3,6 +3,9 @@
    Chỉ đổi giao diện: mọi nút, ô nhập vẫn dùng các thuộc tính data-* cũ nên logic trong events.js giữ nguyên. */
 (function(){var o=null;try{o=JSON.parse(localStorage.getItem('xuongclip_panels')||'null')}catch(e){}
   S.pL=o&&typeof o.L==='boolean'?o.L:(window.innerWidth<1600);S.pR=o&&typeof o.R==='boolean'?o.R:false;S.fs=false;S.chkOpen=false})();
+/* Mục Inspector nhớ trạng thái mở / đóng giữa các lần vẽ lại. */
+function secAttr(k,def){var v=S.secOpen&&S.secOpen[k];return (v===undefined?def:v)?' open':''}
+document.addEventListener('click',function(e){var sm=e.target.closest&&e.target.closest('summary'),d=sm&&sm.parentElement;if(d&&d.dataset&&d.dataset.sec&&sm===d.firstElementChild){S.secOpen=S.secOpen||{};S.secOpen[d.dataset.sec]=!d.open}},true); // bắt trước khi bấm làm vẽ lại
 function savePanels(){try{localStorage.setItem('xuongclip_panels',JSON.stringify({L:S.pL,R:S.pR}))}catch(e){}}
 function tc(s){s=Math.max(0,+s||0);var m=Math.floor(s/60),r=s-m*60;return ('0'+m).slice(-2)+':'+(r<10?'0':'')+r.toFixed(1)}
 /* Đèn trạng thái của một dòng: lỗi / thiếu cảnh / cảnh báo / sẵn sàng. */
@@ -18,7 +21,7 @@ function chkSum(c){var r=checkClip(c);return '<span class="k">Kiểm tra</span><
 /* ---------- các mảnh ---------- */
 function edTop(c,tot){
   var sel='<select id="pickclip" aria-label="Chọn clip">'+CLIPS.map(function(x){return '<option value="'+esc(x.id)+'" '+(x.id===c.id?'selected':'')+'>'+esc(x.id)+' · '+esc(x.name)+'</option>'}).join('')+'</select>';
-  return '<div class="etop">'+chkDot(c)+sel+'<span class="tc" title="Tổng thời lượng">'+tc(tot)+'</span><span class="meta eg">'+esc(c.g)+(c.prod?' · '+esc(c.prod):'')+'</span>'+
+  return '<div class="etop">'+chkDot(c)+sel+'<span class="tc" title="Tổng thời lượng'+(endOn(c)?' (kể cả khung kết)':'')+'">'+tc(tot+endDur(c))+'</span><span class="meta eg">'+esc(c.g)+(c.prod?' · '+esc(c.prod):'')+'</span>'+
    '<div class="chkw"><button class="chkt" id="chkt" data-ui="chk" aria-expanded="'+(S.chkOpen?'true':'false')+'">'+chkSum(c)+'</button>'+
    '<div class="chk chkdd" id="chkbox"'+(S.chkOpen?'':' hidden')+'>'+chkPanel(c)+'</div></div>'+
    '<span class="sp"></span><button class="btn sm" data-auto="'+esc(c.id)+'">Ghép lại tự động</button>'+
@@ -55,7 +58,7 @@ function lineDetail(c,l,i){
   h+='</div>'+(sg?lookBox(c,l,i):'')+'<div class="sec"><div class="lab">Thời lượng, tốc độ, chuyển cảnh</div><div class="lctl">'+lineCtl(c,l,i)+'</div>'+
    (i>0?'<label class="lab">Chuyển vào cảnh này<select data-ltr="'+i+'" aria-label="Chuyển vào cảnh này"><option value="">Theo mặc định ('+TRN[TR.type]+')</option>'+Object.keys(TRN).map(function(k){return '<option value="'+k+'" '+(l.tr===k?'selected':'')+'>'+TRN[k]+'</option>'}).join('')+'</select></label>':'')+'</div>';
   h+='<details class="sec infos" open><summary class="lab">Chữ hiện ('+l.infos.length+')</summary>'+l.infos.map(function(x,k){var ct=cue(l,x),sp=infoSpan(l,x);
-    return '<div class="irow3"><div class="ir1"><input type="text" data-ix="'+i+'|'+k+'" value="'+esc(x.x)+'" aria-label="Chữ hiện"><button class="btn xs" data-delinfo="'+i+'|'+k+'" aria-label="Xóa chữ này" title="Xóa chữ này">×</button></div>'+
+    return '<div class="irow3"><div class="ir1"><input type="text" data-ix="'+i+'|'+k+'" value="'+esc(x.x)+'" aria-label="Chữ hiện"><select class="ist" data-ist="'+i+'|'+k+'" aria-label="Kiểu chữ" title="Kiểu chữ">'+tsOptions(x.st||'',c,true)+'</select><button class="btn xs" data-delinfo="'+i+'|'+k+'" aria-label="Xóa chữ này" title="Xóa chữ này">×</button></div>'+
      '<details class="ir2"><summary>Cụm "'+esc(x.ph||'')+'" · '+(sp?tc(sp.a)+' – '+tc(sp.b):'không khớp')+'</summary><div class="ir2g">'+
      '<label class="lc">Cụm làm mốc<input type="text" data-ip="'+i+'|'+k+'" value="'+esc(x.ph)+'" aria-label="Cụm trong thoại"></label>'+
      '<label class="lc">Hiện lúc (s)<input type="number" step="0.1" min="0" data-io="'+i+'|'+k+'" value="'+((x.off!=null&&x.off!=='')?(l.s+ +x.off).toFixed(1):'')+'" placeholder="'+(ct===null?'không khớp':'tự '+ct.toFixed(1))+'" aria-label="Giây chữ hiện"></label>'+
@@ -66,7 +69,10 @@ function lineDetail(c,l,i){
 function edInspector(c){var li=Math.min(S.li,c.lines.length-1),l=c.lines[li];
   return '<aside class="pnl pr" aria-label="Thuộc tính dòng"><div class="ph"><b>'+(S.pR?'':'Thuộc tính')+'</b><button class="pt" data-ui="pr" title="'+(S.pR?'Mở':'Thu gọn')+' bảng thuộc tính">'+(S.pR?'‹':'›')+'</button></div>'+
    (S.pR?'<div class="prail" data-ui="pr">Thuộc tính</div>':'<div class="pb">'+lineDetail(c,l,li)+
+   '<details class="sec ts" data-sec="ts"'+secAttr('ts',false)+'><summary class="lab">Kiểu chữ ('+TS.list.length+')</summary>'+tsBox(c)+'</details>'+
    '<details class="sec" open><summary class="lab">Giọng đọc của clip</summary>'+voiceInner(c)+'</details>'+
+   '<details class="sec mus" data-sec="mus"'+secAttr('mus',!!c.music)+'><summary class="lab">Nhạc nền'+(c.music?' · '+esc(c.music.name||''):'')+'</summary>'+musicBox(c)+'</details>'+
+   '<details class="sec endc" data-sec="endc"'+secAttr('endc',endOn(c))+'><summary class="lab">Khung kết'+(endOn(c)?' · '+fmt1(endDur(c))+'s':' · tắt')+'</summary>'+endBox(c)+'</details>'+
    '<details class="sec"><summary class="lab">Ảnh bìa</summary>'+coverBox(c)+'</details>'+
    '<details class="sec"'+(c.out?' open':'')+'><summary class="lab">Xuất</summary><div class="meta" id="expst"></div>'+
    (c.out&&!c.out.url?'<div class="meta">Đã xuất trước đây: '+esc(c.out.name||'')+' ('+esc(c.out.mb||'?')+' MB). Bản xem trong trình duyệt không còn sau khi tải lại trang.</div>':'')+
@@ -86,7 +92,7 @@ function vGhep(){
    '<div class="egrid">'+edLib(c)+
    '<section class="ectr"><div class="eview">'+
     '<div class="phone" id="phone"><video id="pv" class="pv" muted playsinline hidden></video><canvas id="pvc" class="pvc" width="720" height="1280" aria-label="Khung xem thử"></canvas><div id="sc"></div><div id="tr"></div><div id="inf"></div>'+safeOverlay()+'</div>'+
-    '<div class="ctrl"><button class="btn sm pri" data-act="play">'+(S.play?'Dừng':'Phát')+'</button><input type="range" id="scrub" min="0" max="'+tot+'" step="0.1" value="'+S.t+'" aria-label="Thanh thời gian"><span class="t tc" id="tt"></span></div>'+
+    '<div class="ctrl"><button class="btn sm pri" data-act="play">'+(S.play?'Dừng':'Phát')+'</button><input type="range" id="scrub" min="0" max="'+(tot+endDur(c))+'" step="0.1" value="'+S.t+'" aria-label="Thanh thời gian"><span class="t tc" id="tt"></span></div>'+
     '</div>'+
    '<div class="elist"><div class="lhd"><b>Dòng thoại</b><span class="meta">'+c.lines.length+' dòng · bấm để mở chi tiết</span></div>'+edRows(c)+
     '<div class="trbox"><label class="lab" for="trtype">Chuyển cảnh mặc định</label><select id="trtype">'+Object.keys(TRN).map(function(k){return '<option value="'+k+'" '+(TR.type===k?'selected':'')+'>'+TRN[k]+'</option>'}).join('')+'</select> <input type="number" id="trdur" min="0.1" max="1" step="0.1" value="'+TR.dur+'" aria-label="Thời gian chuyển cảnh"> giây</div></div>'+
