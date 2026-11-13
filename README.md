@@ -26,6 +26,7 @@ js/
   ui.js             Giao diện các tab, xem trước, điều hướng
   editor.js         Màn Ghép clip kiểu phòng dựng: thanh trên, thư viện, danh sách dòng, Inspector
   tl.js             Thanh thời gian nhiều tầng (Video, Giọng, Chữ, Nhạc), kéo thả, phím tắt
+  xuong.js          Tab Xưởng (mở mặc định): các trạm sản xuất, mốc hạn chót, lọc, xem theo người
   kbview.js         Tab Kịch bản: nạp theo đợt, trùng mã, lưu trữ đợt, xóa mềm
   libview.js        Tab Thư viện (lọc, chọn nhiều, gắn hàng loạt, hoàn tác) và phần danh mục / quy tắc ở Cài đặt
   events.js         Bắt sự kiện click / nhập / kéo thả
@@ -42,9 +43,9 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
 
 ```
 <thư mục source>/.xuongclip/
-  state.json        version 4: library, deleted, products, rules, mergeSkip (thư viện)
+  state.json        version 5: library, deleted, products, rules, mergeSkip (thư viện)
                     clips, clipsArchived, clipsTrash, exported, info (kịch bản, clip đang ghép, clip đã xuất)
-                    checkRules, checkCfg (luật kiểm tra, ngưỡng, vùng an toàn)
+                    checkRules, checkCfg (luật kiểm tra, ngưỡng, vùng an toàn), milestones (hạn chót)
   state.bak.json    bản state.json trước lần ghi gần nhất
   state.v<N>.bak.json   bản trước khi nâng version (giữ lâu dài)
   audio/<mã clip>.wav   giọng đọc đã tạo hoặc tải lên
@@ -78,6 +79,12 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
 - Luật hình thức: tổng thời lượng 45–60 giây (LỖI), mỗi dòng 6–9 giây (CẢNH BÁO), chữ số trong lời (CẢNH BÁO), cụm chữ hiện không có trong lời (LỖI), dòng cuối thiếu "giỏ hàng" (CẢNH BÁO), dòng chưa có cảnh / clip chưa có giọng (LỖI), chữ hiện ra ngoài vùng an toàn (CẢNH BÁO). Ngưỡng và bật/tắt ở Cài đặt.
 - Vùng an toàn TikTok: trên 8%, dưới 22%, phải 14%, trái 4% — **số ước lượng, chưa kiểm chứng**.
 - Còn LỖI thì nút Xuất bị khóa; chỉ còn CẢNH BÁO thì hỏi xác nhận. CẢNH BÁO bỏ qua được cho từng clip, LỖI thì không.
+
+## Màn Xưởng
+
+- Tab đầu tiên, mở mặc định. Mỗi clip tự rơi vào một trạm theo dữ liệu: Kịch bản (chưa gán cảnh nào) → Ghép cảnh (thiếu cảnh hoặc chưa có giọng) → Kiểm tra (đủ cảnh và giọng, còn LỖI) → Sẵn sàng xuất → Đã xuất → Đã đăng (người dùng tự đánh dấu, có hoàn tác). Clip quay trực tiếp nằm ở Sẵn sàng xuất chờ đánh dấu đã đăng.
+- Mốc hạn chót nhập tay: tên, ngày giờ (múi giờ máy), mục tiêu % clip tới trạm đích; đếm ngược, thanh tiến độ, vàng khi còn dưới 24 giờ mà chưa đạt, đỏ khi quá hạn chưa đạt.
+- Lọc theo người, gian, trạm, có lỗi, thiếu source; xem theo trạm hoặc theo người. Bộ lọc nhớ trong trình duyệt.
 
 ## Giao diện phòng dựng
 

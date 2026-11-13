@@ -443,3 +443,67 @@ kbd{font-family:var(--mono);background:var(--panel2);border:1px solid var(--line
 .tlbar .vopts .note{display:inline-flex!important;gap:4px;align-items:center;white-space:nowrap;color:var(--muted)}
 .tlbar .vopts .note .meta{display:inline;font-size:11px}
 .ed5 .ectr .phone{height:calc(100% - 44px);max-height:calc(100% - 44px)}
+
+/* ================= Bước 6: màn Xưởng ================= */
+.xw5{display:flex;flex-direction:column;gap:8px;height:calc(100vh - 60px);min-height:560px;padding-top:6px}
+.xhead{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.xhead h1{margin:0}
+.xsum{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.xsum>div{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 12px;display:flex;align-items:baseline;gap:6px}
+.xsum b{font-family:var(--mono);font-size:18px;font-variant-numeric:tabular-nums}
+.xsum span{font-size:12px;color:var(--muted)}
+.xsum .ok b{color:var(--ok)}.xsum .err b{color:var(--err)}.xsum .warn b{color:var(--warn)}
+.xmiles{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
+.mile{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--muted);border-radius:8px;padding:6px 10px;min-width:280px;flex:0 1 380px}
+.mile.ok{border-left-color:var(--ok)}.mile.warn{border-left-color:var(--warn);background:linear-gradient(90deg,var(--warn-soft),var(--panel) 60%)}.mile.err{border-left-color:var(--err);background:linear-gradient(90deg,var(--err-soft),var(--panel) 60%)}
+.mh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.mh .mt{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.mh .mc{margin-left:auto;font-weight:600;font-size:12.5px}
+.mile.warn .mc{color:var(--warn)}.mile.err .mc{color:var(--err)}.mile.ok .mc{color:var(--ok)}
+.mgoal{font-size:12px;color:var(--muted);margin:2px 0 4px}
+.mbar{position:relative;height:8px;background:var(--bg);border:1px solid var(--line);border-radius:999px;overflow:visible}
+.mfill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:999px}
+.mile.ok .mfill{background:var(--ok)}.mile.err .mfill{background:var(--err)}
+.mtgt{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--fg);margin-left:-1px}
+.mnew summary{list-style:none;display:inline-block}.mnew summary::-webkit-details-marker{display:none}
+.mform{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:12.5px;color:var(--muted)}
+.mform input[type=text]{width:220px}.mform input,.mform select{width:auto;padding:4px 8px}
+input[type=datetime-local]{background:var(--bg);border:1px solid var(--line);border-radius:7px;color:var(--fg);padding:4px 8px;color-scheme:dark}
+.xfil{display:flex;gap:4px 6px;align-items:center;flex-wrap:wrap}
+.xfil .lab{margin:0 0 0 8px;font-size:11.5px}
+.xfil .chip{padding:3px 9px;font-size:12px;margin:0}
+.xview{display:inline-flex;gap:0;margin-right:6px}.xview .chip{border-radius:0}.xview .chip:first-child{border-radius:999px 0 0 999px}.xview .chip:last-child{border-radius:0 999px 999px 0}
+.xboard{flex:1;min-height:300px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.xcol{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0;min-width:0}
+.xch{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-bottom:1px solid var(--line);font-size:13px}
+.xch .xn{font-family:var(--mono);background:var(--panel2);border-radius:999px;padding:0 8px;font-size:12px}
+.xcol[data-stage="kiemtra"] .xch{box-shadow:inset 0 2px 0 var(--err)}.xcol[data-stage="ready"] .xch{box-shadow:inset 0 2px 0 var(--accent)}
+.xcol[data-stage="exported"] .xch,.xcol[data-stage="posted"] .xch{box-shadow:inset 0 2px 0 var(--ok)}
+.xcb{overflow-y:auto;overflow-x:hidden;padding:6px;display:grid;gap:6px;align-content:start;flex:1;min-height:0}
+.xempty{color:var(--muted);font-size:12px;text-align:center;padding:12px 0;opacity:.7}
+.xcard{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;cursor:pointer;font-size:12px;display:grid;gap:3px;min-width:0}
+.xcard:hover{border-color:var(--accent)}
+.xc1{display:flex;align-items:center;gap:6px}.xc1 b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.xc1 .xdur{margin-left:auto;font-family:var(--mono);color:var(--muted);font-size:11.5px}
+.xname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xmeta{color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xprog{height:4px;background:var(--panel2);border-radius:999px;overflow:hidden}.xprog span{display:block;height:100%;background:var(--accent)}
+.xc3{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.xc3 span,.xmiss{font-size:11px;padding:0 6px;border-radius:4px;white-space:nowrap}
+.xsg{background:var(--panel2);color:var(--muted);font-family:var(--mono)}
+.xe{background:var(--err-soft);color:var(--err);font-weight:600}.xw{background:var(--warn-soft);color:var(--warn)}
+.xmiss{border:1px solid var(--err);background:transparent;color:var(--err);cursor:pointer;font:inherit;font-size:11px}
+.xmiss:hover{background:var(--err-soft)}
+.xc4{display:flex;gap:6px;align-items:center;justify-content:space-between}
+.xpeople{flex:1;min-height:0;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.xpr{display:grid;grid-template-columns:150px repeat(6,minmax(0,1fr)) 80px;gap:6px;padding:6px 10px;border-bottom:1px solid var(--line);align-items:start;font-size:12.5px}
+.xph{position:sticky;top:0;background:var(--panel2);font-size:11.5px;color:var(--muted);z-index:1}
+.xpn small,.xpt small{display:block;color:var(--muted);font-size:11px}
+.xpc,.xpt{display:flex;flex-wrap:wrap;gap:3px;align-items:center;min-width:0}
+.xpc>b,.xpt>b{font-family:var(--mono);width:100%}.xpc.z,.xpt.z{opacity:.4}
+.xpchip{display:inline-flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:0 5px;font-size:11px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xpchip:hover{border-color:var(--accent)}.xpchip .dot{width:7px;height:7px}
+
+.mh{flex-wrap:nowrap}.mh b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.mh .mt,.mh .mc{white-space:nowrap}
+.mgoal{display:flex;gap:6px;align-items:center}.mgoal span{flex:1;min-width:0}
+.xc4 .btn{white-space:nowrap}
+.xw5{height:calc(100vh - 106px);min-height:520px}

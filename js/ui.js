@@ -3,7 +3,7 @@ function pill(s){return '<span class="pill p-'+s+'">'+STAT[s]+'</span>'}
 /* ---------- các màn hình ---------- */
 function nav(){
   var miss=0,m=missingAll();Object.keys(m).forEach(function(k){miss+=m[k].length});
-  var tabs=[['kichban','Kịch bản'],['ghep','Ghép clip'],['thieu','Thiếu source'],['daxuat','Clip đã xuất'],['thuvien','Thư viện source'],['caidat','Cài đặt']];
+  var tabs=[['xuong','Xưởng'],['kichban','Kịch bản'],['ghep','Ghép clip'],['thieu','Thiếu source'],['daxuat','Clip đã xuất'],['thuvien','Thư viện source'],['caidat','Cài đặt']];
   document.getElementById('nav').innerHTML=tabs.map(function(t,i){
     return '<a class="'+(S.tab===t[0]?'on':'')+'" href="#'+t[0]+'">'+t[1]+(t[0]==='thieu'&&miss?'<span class="cnt">'+miss+'</span>':'')+'</a>'}).join('');
 }
@@ -11,9 +11,11 @@ function candRow(c,i,r){var s=r.s;
   return '<div class="cand2'+(r.dup?' dup':'')+'"><div class="thumb" style="'+bg(s)+'"></div><div class="cinfo"><b>'+esc(s.label)+'</b> <span class="meta">điểm '+r.sc+' · '+s.o+' · '+fmt1(sdur(s))+'s</span><div class="why">'+esc(r.why.join('; '))+'</div></div>'+
    '<button class="btn sm" data-pv="'+s.id+'|'+esc(c.id)+'|'+i+'">Xem</button><button class="btn sm pri" data-pick="'+i+'|'+s.id+'|'+r.a+'">Chọn</button></div>'}
 function vThieu(){
-  var m=missingAll(),ks=Object.keys(m);
+  if(S.thieuClip&&!clip(S.thieuClip))S.thieuClip=null;
+  var m=missingAll(S.thieuClip),ks=Object.keys(m);
   var txt=ks.map(function(k){return k+':\n'+m[k].map(function(x){return '- '+(x.l.need||('cảnh cho câu: '+x.l.t))+' ('+x.c.id+', dòng '+(x.i+1)+')'}).join('\n')}).join('\n\n');
   var h='<h1>Thiếu source</h1><p class="sub">Mỗi cảnh thiếu có ba hướng xử lý: dùng cảnh có sẵn (chỉ hiện khi có video cùng sản phẩm đủ '+SG.min+' điểm), đổi thoại cho khớp cảnh có sẵn, hoặc quay thêm. Tool không gợi ý video khác sản phẩm, video chưa gắn nhãn'+(SG.allowGuess?'':' hay nhãn đoán chưa xác nhận')+'.</p>';
+  if(S.thieuClip)h+='<div class="w warn">Đang lọc theo clip <b>'+esc(S.thieuClip)+'</b>. <button class="btn sm" data-xact="thieuall">Xem tất cả clip</button></div>';
   if(!ks.length)return h+'<div class="empty">Không có cảnh nào thiếu. Nếu chưa thấy gì, hãy ghép cảnh tự động ở tab Kịch bản trước.</div>';
   ks.forEach(function(k){
     h+='<div class="grp"><h3>'+esc(k)+' ('+m[k].length+' cảnh)</h3>'+m[k].map(function(x){
@@ -144,14 +146,14 @@ function render(){if(S._rendering){S._rerender=true;return}S._rendering=true;try
 function renderNow(){
   chkBump();nav();var m=document.getElementById('main');
   var banner=S.msg?'<div class="w ok" style="margin-top:12px">'+esc(S.msg)+'</div>':'';S.msg='';
-  m.innerHTML=banner+{kichban:vKichban,ghep:vGhep,thieu:vThieu,daxuat:vDaxuat,thuvien:vThuvien,caidat:vCaidat}[S.tab]();
+  m.innerHTML=banner+{xuong:vXuong,kichban:vKichban,ghep:vGhep,thieu:vThieu,daxuat:vDaxuat,thuvien:vThuvien,caidat:vCaidat}[S.tab]();
   if(S.tab==='ghep'){drawPhone();afterGhep()}
   renderSrcBar();if(S.tab==='thuvien'){observeThumbs();updSelUI()}if(S.tab==='ghep')observeThumbs();
 }
 function afterGhep(){var c=clip(S.cur);if(!c||!c.lines||!c.lines.length)return;drawWave(c);
   c.lines.forEach(function(l){var sg=l.seg?seg(l.seg):null;if(sg)ensureStrip(sg)});
   var cn=document.getElementById('covc');if(cn&&c.cov)coverFrame(c,c.cov,cn)}
-function route(){var h=location.hash.replace('#','');if(['kichban','ghep','thieu','daxuat','thuvien','caidat'].indexOf(h)<0)h='kichban';S.tab=h;stop();render()}
+function route(){var h=location.hash.replace('#','');if(['xuong','kichban','ghep','thieu','daxuat','thuvien','caidat'].indexOf(h)<0)h='xuong';S.tab=h;stop();render()}
 function stop(){stopB();S.stopAt=null;S.audLi=-1;S.lastLi=-1;var trl0=document.getElementById('tr');if(trl0)trl0.innerHTML='';if(S.aud){try{S.aud.pause()}catch(x){}S.aud=null}S.play=false;S.mode='';S.tok++;try{speechSynthesis.cancel()}catch(x){}if(S.tm){clearInterval(S.tm);S.tm=null}}
 function live(){var c=clip(S.cur);if(!c)return;timeline(c);
   c.lines.forEach(function(l,i){document.querySelectorAll('[data-t="'+i+'"]').forEach(function(e){e.textContent=e.classList.contains('ld')?tc(l.e-l.s):tc(l.s)+' – '+tc(l.e)+' · '+wc(l.t)+' từ'})});drawPhone();schedChk()}

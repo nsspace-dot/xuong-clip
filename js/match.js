@@ -79,7 +79,7 @@ function st(c){
   if(checkClip(c).errs.length)return 'loi';return 'ready';
 }
 /* Cảnh thiếu, gom theo sản phẩm (tên chuẩn). */
-function missingAll(){var o={};CLIPS.forEach(function(c){if(isDirect(c)||!c.auto||c.exported)return;var k=canonicalProduct(c.prod)||'Chưa rõ sản phẩm';
+function missingAll(cid){var o={};CLIPS.forEach(function(c){if(isDirect(c)||!c.auto||c.exported||(cid&&c.id!==cid))return;var k=canonicalProduct(c.prod)||'Chưa rõ sản phẩm';
   c.lines.forEach(function(l,i){if(!lineSeg(l))(o[k]=o[k]||[]).push({c:c,i:i,l:l})})});return o}
 
 /* ---------- sự kiện: tới chỗ trùng, mở khóa dòng ---------- */

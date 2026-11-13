@@ -117,7 +117,8 @@ document.addEventListener('change',function(e){
     if(d.ip){var y=d.ip.split('|');c.lines[+y[0]].infos[+y[1]].ph=t.value}render();return}
   if(d.so){seg(d.so).o=t.value;saveSeg(seg(d.so));render();return}
   if(d.cap){EXP.filter(function(x){return x.id===d.cap})[0].cap=t.value;return}
-  if(d.posted){EXP.filter(function(x){return x.id===d.posted})[0].posted=t.checked;return}
+  if(d.posted){var ex=EXP.filter(function(x){return x.id===d.posted})[0];ex.posted=t.checked;var pc=clip(ex.clipId);
+    if(pc){if(t.checked){pc.posted=true;pc.postedAt=pc.postedAt||new Date().toISOString()}else if(!EXP.some(function(x){return x.clipId===pc.id&&x.posted})){delete pc.posted;delete pc.postedAt}}return}
   if(d.pname!==undefined){var pp=PEOPLE[+d.pname],nv=t.value.trim();if(!pp)return;if(!nv||(person(nv)&&person(nv)!==pp)){msg(nv?'"'+nv+'" đã có trong danh sách.':'Tên không được để trống.');render();return}
     CLIPS.forEach(function(x){if(x.who&&person(x.who)===pp)x.who=nv});pp.name=nv;savePeople();render();return}
   if(d.pdirect!==undefined){var pq=PEOPLE[+d.pdirect];if(pq){pq.direct=t.checked;savePeople()}render();return}
