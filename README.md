@@ -25,6 +25,7 @@ js/
   export.js         Xuất video MP4 (WebCodecs + mp4-muxer), ảnh bìa, lưu file
   ui.js             Giao diện các tab, xem trước, điều hướng
   editor.js         Màn Ghép clip kiểu phòng dựng: thanh trên, thư viện, danh sách dòng, Inspector
+  look.js           Bộ lọc ảnh và khung hình; drawSrc() vẽ khung nguồn chung cho xem thử, xuất, ảnh bìa
   tl.js             Thanh thời gian nhiều tầng (Video, Giọng, Chữ, Nhạc), kéo thả, phím tắt
   xuong.js          Tab Xưởng (mở mặc định): các trạm sản xuất, mốc hạn chót, lọc, xem theo người
   kbview.js         Tab Kịch bản: nạp theo đợt, trùng mã, lưu trữ đợt, xóa mềm
@@ -43,7 +44,7 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
 
 ```
 <thư mục source>/.xuongclip/
-  state.json        version 5: library, deleted, products, rules, mergeSkip (thư viện)
+  state.json        version 6: library, deleted, products, rules, mergeSkip (thư viện)
                     clips, clipsArchived, clipsTrash, exported, info (kịch bản, clip đang ghép, clip đã xuất)
                     checkRules, checkCfg (luật kiểm tra, ngưỡng, vùng an toàn), milestones (hạn chót)
   state.bak.json    bản state.json trước lần ghi gần nhất
@@ -79,6 +80,12 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
 - Luật hình thức: tổng thời lượng 45–60 giây (LỖI), mỗi dòng 6–9 giây (CẢNH BÁO), chữ số trong lời (CẢNH BÁO), cụm chữ hiện không có trong lời (LỖI), dòng cuối thiếu "giỏ hàng" (CẢNH BÁO), dòng chưa có cảnh / clip chưa có giọng (LỖI), chữ hiện ra ngoài vùng an toàn (CẢNH BÁO). Ngưỡng và bật/tắt ở Cài đặt.
 - Vùng an toàn TikTok: trên 8%, dưới 22%, phải 14%, trái 4% — **số ước lượng, chưa kiểm chứng**.
 - Còn LỖI thì nút Xuất bị khóa; chỉ còn CẢNH BÁO thì hỏi xác nhận. CẢNH BÁO bỏ qua được cho từng clip, LỖI thì không.
+
+## Bộ lọc và khung hình
+
+- Mỗi dòng có bộ lọc nhẹ (độ sáng, tương phản, bão hòa, sắc nét) và khung (lấp đầy / vừa khung 9:16, phóng 1–3×, kéo lệch trên khung xem thử). Mặc định "Giữ màu gốc": không xử lý gì thêm.
+- Khung xem thử vẽ bằng đúng hàm `drawSrc()` mà file xuất dùng, nên xem thử và xuất giống hệt.
+- Áp cho tất cả dòng của clip hoặc cho các clip đã chọn (hỏi xác nhận, hoàn tác được một lần).
 
 ## Màn Xưởng
 

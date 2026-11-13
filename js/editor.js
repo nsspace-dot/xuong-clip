@@ -52,7 +52,7 @@ function lineDetail(c,l,i){
     h+='<div class="cands2">'+(good.length?good.map(function(r){return candRow(c,i,r)}).join(''):'<div class="meta">'+(canonicalProduct(c.prod)?'Không có video "'+esc(canonicalProduct(c.prod))+'" nào đủ '+SG.min+' điểm cho dòng này.':'Clip chưa ghi sản phẩm nên không gợi ý được.')+'</div>')+
       (low.length?'<details><summary>'+low.length+' video cùng sản phẩm chưa đủ điểm hoặc trùng đoạn (chỉ tự chọn khi chắc chắn)</summary>'+low.map(function(r){return candRow(c,i,r)}).join('')+'</details>':'')+
       '<div class="bar" style="margin-top:4px"><button class="btn sm" data-pick="'+i+'|none|0">Bỏ chọn (báo thiếu)</button></div></div>'}
-  h+='</div><div class="sec"><div class="lab">Thời lượng, tốc độ, chuyển cảnh</div><div class="lctl">'+lineCtl(c,l,i)+'</div>'+
+  h+='</div>'+(sg?lookBox(c,l,i):'')+'<div class="sec"><div class="lab">Thời lượng, tốc độ, chuyển cảnh</div><div class="lctl">'+lineCtl(c,l,i)+'</div>'+
    (i>0?'<label class="lab">Chuyển vào cảnh này<select data-ltr="'+i+'" aria-label="Chuyển vào cảnh này"><option value="">Theo mặc định ('+TRN[TR.type]+')</option>'+Object.keys(TRN).map(function(k){return '<option value="'+k+'" '+(l.tr===k?'selected':'')+'>'+TRN[k]+'</option>'}).join('')+'</select></label>':'')+'</div>';
   h+='<details class="sec infos" open><summary class="lab">Chữ hiện ('+l.infos.length+')</summary>'+l.infos.map(function(x,k){var ct=cue(l,x),sp=infoSpan(l,x);
     return '<div class="irow3"><div class="ir1"><input type="text" data-ix="'+i+'|'+k+'" value="'+esc(x.x)+'" aria-label="Chữ hiện"><button class="btn xs" data-delinfo="'+i+'|'+k+'" aria-label="Xóa chữ này" title="Xóa chữ này">×</button></div>'+
@@ -85,7 +85,7 @@ function vGhep(){
    (canonicalProduct(c.prod)?'':'<div class="w warn">Clip chưa ghi sản phẩm nên tool không gợi ý cảnh được. Sửa ô Sản phẩm ở tab Kịch bản.</div>')+
    '<div class="egrid">'+edLib(c)+
    '<section class="ectr"><div class="eview">'+
-    '<div class="phone" id="phone"><video id="pv" class="pv" muted playsinline hidden></video><div id="sc"></div><div id="tr"></div><div id="inf"></div>'+safeOverlay()+'</div>'+
+    '<div class="phone" id="phone"><video id="pv" class="pv" muted playsinline hidden></video><canvas id="pvc" class="pvc" width="720" height="1280" aria-label="Khung xem thử"></canvas><div id="sc"></div><div id="tr"></div><div id="inf"></div>'+safeOverlay()+'</div>'+
     '<div class="ctrl"><button class="btn sm pri" data-act="play">'+(S.play?'Dừng':'Phát')+'</button><input type="range" id="scrub" min="0" max="'+tot+'" step="0.1" value="'+S.t+'" aria-label="Thanh thời gian"><span class="t tc" id="tt"></span></div>'+
     '</div>'+
    '<div class="elist"><div class="lhd"><b>Dòng thoại</b><span class="meta">'+c.lines.length+' dòng · bấm để mở chi tiết</span></div>'+edRows(c)+

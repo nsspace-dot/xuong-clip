@@ -5,7 +5,7 @@
    Thay đổi được phát hiện bằng cách so "chữ ký" dữ liệu clip sau mỗi lần bấm, đổi, thả chuột hay gõ phím,
    rồi dùng chung cơ chế ghi trễ 1,5 giây của source.js. Kéo thanh trượt chỉ ghi khi thả. */
 var ARCH=[],TRASH=[];
-var LINE_KEYS=['t','need','seg','segIn','segOut','lock','tr','spd','dm','dd','fill','why'];
+var LINE_KEYS=['t','need','seg','segIn','segOut','lock','tr','spd','dm','dd','fill','why','flt','fx'];
 var INFO_KEYS=['x','ph','off','len','sz','px','py'];
 var COV_KEYS=['li','tm','text','px','py','sz','fg','bg','nobg'];
 var BIG_STATE=5*1024*1024;
@@ -29,6 +29,7 @@ function clipFromRec(o){
     lines:(Array.isArray(o.lines)?o.lines:[]).map(function(r){r=r||{};var l={t:String(r.t||''),need:String(r.need||''),seg:r.seg?String(r.seg):null,infos:[],choose:false};
       ['segIn','segOut','spd','dm','dd'].forEach(function(k){var v=num(r[k]);if(v!==undefined)l[k]=v});
       if(r.lock)l.lock=true;['tr','fill','why'].forEach(function(k){if(r[k])l[k]=String(r[k])});
+      if(r.flt&&typeof r.flt==='object'){var f0=lineFlt(r);if(!fltZero(f0))l.flt=f0}if(r.fx&&typeof r.fx==='object'){var x0=lineFx(r);if(!fxZero(x0))l.fx=x0}
       l.infos=(Array.isArray(r.infos)?r.infos:[]).map(function(x){x=x||{};var i={x:String(x.x==null?'':x.x),ph:String(x.ph||'')};['off','len','sz','px','py'].forEach(function(k){var v=num(x[k]);if(v!==undefined)i[k]=v});return i});
       return l})};
   if(Array.isArray(o.bounds))c.bounds=o.bounds.map(Number);if(o.bManual)c.bManual=true;if(o.alignInfo)c.alignInfo=String(o.alignInfo);

@@ -11,7 +11,7 @@ var SRCF={ok:!!(window.showDirectoryPicker&&window.crypto&&crypto.subtle),h:null
 // Khóa do chính tab này để lại trước khi tải lại trang (pagehide ghi id vào sessionStorage) thì coi là của mình.
 // Tab nhân bản không có dấu này vì tab gốc chưa rời trang.
 try{SRCF.prev=sessionStorage.getItem('xuongclip_left')||'';sessionStorage.removeItem('xuongclip_left')}catch(e){}
-var STATE_VER=5,XDIR='.xuongclip',LOCK_TTL=120000,VEXT=/\.(mp4|mov|m4v|webm)$/i;
+var STATE_VER=6,XDIR='.xuongclip',LOCK_TTL=120000,VEXT=/\.(mp4|mov|m4v|webm)$/i;
 var OSTAT=['thô','đã dựng','đã đăng'];
 
 /* ---------- tiện ích nhỏ ---------- */

@@ -18,7 +18,7 @@ function drawTextBox(ctx,W,H,text,fs,fg,bg,cx,cy,shadow){
   ctx.fillStyle=fg;ls.forEach(function(q,n){ctx.fillText(q,bx+bw/2,by+fs*0.35+lh*(n+0.5))});ctx.restore();ctx.textBaseline='alphabetic'}
 function drawBase(ctx,W,H,v,l,sg,st,t,sx){
   if(!st.drew){ctx.fillStyle='#111';ctx.fillRect(0,0,W,H)}
-  if(v&&v.readyState>=2&&v.videoWidth){var k=Math.max(W/v.videoWidth,H/v.videoHeight),dw=v.videoWidth*k,dh=v.videoHeight*k;ctx.drawImage(v,(W-dw)/2,(H-dh)/2,dw,dh);st.drew=true;return}
+  if(v&&v.readyState>=2&&v.videoWidth){drawSrc(ctx,W,H,v,l);st.drew=true;return} // cùng hàm với khung xem thử
   if(v&&st.drew&&!st.bad[st.li]&&t<sx+1.5)return;
   st.bad[st.li]=1;ctx.fillStyle='#333';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.font='600 36px system-ui,sans-serif';ctx.textAlign='center';
   wrapText(ctx,v?'Video không giải mã được':(l.seg?'Đoạn mẫu: '+(sg||{}).label:'THIẾU CẢNH: '+l.need),W-120).forEach(function(tx,n){ctx.fillText(tx,W/2,H/2+n*46)})}
@@ -145,7 +145,7 @@ function coverFrame(c,cv,canvas){var l=c.lines[cv.li],sg=l&&l.seg?seg(l.seg):nul
   var ph=function(){ctx.fillStyle=sg?'hsl('+hue(sg.p)+',55%,32%)':'#333';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.font='600 '+Math.round(W/14)+'px system-ui';ctx.textAlign='center';ctx.fillText(sg?'(không đọc được video)':'chưa có cảnh',W/2,H/2)};
   if(!sg||!sg.url){ph();return Promise.resolve()}
   var get=(S.cvVid&&S.cvVid.sid===sg.id)?Promise.resolve(S.cvVid.v):loadVid(sg.url).then(function(v){S.cvVid={sid:sg.id,v:v};return v});
-  return get.then(function(v){if(!v||!v.videoWidth){ph();return}return seekVid(v,Math.max(0,Math.min(cv.tm,sdur(sg)-0.05))).then(function(){var k=Math.max(W/v.videoWidth,H/v.videoHeight),dw=v.videoWidth*k,dh=v.videoHeight*k;ctx.drawImage(v,(W-dw)/2,(H-dh)/2,dw,dh)})})}
+  return get.then(function(v){if(!v||!v.videoWidth){ph();return}return seekVid(v,Math.max(0,Math.min(cv.tm,sdur(sg)-0.05))).then(function(){drawSrc(ctx,W,H,v,l)})})}
 function covDraw(c){clearTimeout(S.cvT);S.cvT=setTimeout(function(){var cn=document.getElementById('covc');if(cn&&c.cov)coverFrame(c,c.cov,cn)},60)}
 function exportCover(c){var cv=covInit(c),W=1080,H=1920,cn=newCanvas(W,H),say=function(m){var e=document.getElementById('covst');if(e)e.textContent=m};askDir();say('Đang tạo ảnh...');
   coverFrame(c,cv,cn).then(function(){drawTextBox(cn.getContext('2d'),W,H,cv.text,cv.sz*1.5,cv.fg,cv.nobg?null:cv.bg,cv.px*W,cv.py*H,cv.nobg);

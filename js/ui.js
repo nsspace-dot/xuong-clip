@@ -89,7 +89,7 @@ function drawPhone(){
   if(S.play&&trl&&pv&&li!==S.lastLi&&S.lastLi>=0&&!pv.hidden&&pv.readyState>=2&&pv.videoWidth){
     var tt=trFor(c,li);
     if(tt){try{var cvs=document.createElement('canvas');cvs.width=ph.clientWidth||270;cvs.height=ph.clientHeight||480;var cx=cvs.getContext('2d'),k2=Math.max(cvs.width/pv.videoWidth,cvs.height/pv.videoHeight),dw=pv.videoWidth*k2,dh=pv.videoHeight*k2;
-      cx.drawImage(pv,(cvs.width-dw)/2,(cvs.height-dh)/2,dw,dh);cvs.style.cssText='position:absolute;inset:0;width:100%;height:100%';trl.innerHTML='';trl.appendChild(cvs);
+      var pvc0=document.getElementById('pvc');if(pvc0)cx.drawImage(pvc0,0,0,cvs.width,cvs.height);else cx.drawImage(pv,(cvs.width-dw)/2,(cvs.height-dh)/2,dw,dh);cvs.style.cssText='position:absolute;inset:0;width:100%;height:100%';trl.innerHTML='';trl.appendChild(cvs);
       var kf=tt.type==='fade'?[{opacity:1},{opacity:0}]:(tt.type==='slide'?[{transform:'translateX(0)'},{transform:'translateX(-100%)'}]:[{transform:'scale(1)',opacity:1},{transform:'scale(1.25)',opacity:0}]);
       var an=cvs.animate(kf,{duration:tt.dur*1000,easing:'ease-in-out',fill:'forwards'});an.onfinish=function(){if(cvs.parentNode)cvs.parentNode.removeChild(cvs)}}catch(x){}}}
   S.lastLi=li;
