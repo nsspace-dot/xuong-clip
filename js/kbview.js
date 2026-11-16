@@ -8,7 +8,7 @@ function impBox(){
   var im=S.imp,conf=im.fresh.filter(function(n){return !!clipById(n.id)}),nw=im.fresh.length-conf.length;
   return '<div class="box impbox"><h2>Mã clip đã có</h2><div class="meta">Kịch bản vừa dán có '+im.fresh.length+' clip'+(nw?', '+nw+' clip mới sẽ được thêm':'')+'. '+conf.length+' clip trùng mã với clip đã có, chọn cách xử lý cho từng clip:</div>'+
    conf.map(function(n){var ex=clipById(n.id),ch=im.ch[n.id]||'update';return '<div class="prow"><b>'+esc(n.id)+'</b><span class="meta">'+esc(ex.name)+' · đợt '+esc(batchName(ex.batch))+' · '+kbWhere(ex)+'</span>'+
-     '<select data-impch="'+esc(n.id)+'" style="width:auto"><option value="update" '+(ch==='update'?'selected':'')+'>Cập nhật lời, giữ cảnh đã chọn ở dòng không đổi</option><option value="copy" '+(ch==='copy'?'selected':'')+'>Tạo bản mới (mã '+esc(uniqueClipId(n.id))+')</option><option value="skip" '+(ch==='skip'?'selected':'')+'>Bỏ qua clip này</option></select></div>'}).join('')+
+     '<select data-impch="'+esc(n.id)+'" style="width:auto"><option value="update" '+(ch==='update'?'selected':'')+'>Ghi đè: cập nhật lời, giữ cảnh đã chọn ở dòng không đổi</option><option value="copy" '+(ch==='copy'?'selected':'')+'>Tạo bản mới (mã '+esc(uniqueClipId(n.id))+')</option><option value="skip" '+(ch==='skip'?'selected':'')+'>Bỏ qua, giữ nguyên clip cũ</option></select></div>'}).join('')+
    '<div class="bar"><button class="btn pri" data-kact="impok">Áp dụng</button><button class="btn" data-kact="impno">Hủy</button></div></div>'}
 function vKichban(){
   var h='<h1>Kịch bản</h1><p class="sub">Nạp kịch bản mỗi tuần: clip mới được thêm vào danh sách, không đè clip cũ. Mọi thay đổi tự lưu vào thư mục source.</p>';
@@ -18,6 +18,7 @@ function vKichban(){
     '<label class="lab" for="paste" style="margin-top:10px">Hoặc dán văn bản kịch bản</label><textarea id="paste" rows="7" style="min-height:120px" placeholder="## TV9 | Tường Vip | Lịch laser | Review 3 size&#10;Lời thoại | Cảnh cần | cụm trong thoại=chữ hiện">'+esc(S.paste)+'</textarea>'+
     '<details><summary>Định dạng văn bản</summary><pre>## Mã | Gian | Sản phẩm | Tên clip | (Người phụ trách, bỏ trống là người đầu tiên trong danh sách ở Cài đặt)\nLời thoại | Cảnh cần thấy | cụm trong thoại=chữ hiện trên hình; cụm khác=chữ khác\n(mỗi dòng thoại một dòng, bỏ trống ô cuối nếu không cần chữ thông tin)</pre></details>'+
     '<div class="bar"><button class="btn pri" data-act="load">Nạp vào danh sách</button></div></div>';
+  h+=kbErrBox();
   if(S.imp)h+=impBox();
   if(S.clipUndo)h+='<div class="w ok">Đã '+esc(S.clipUndo.label)+'. <button class="btn sm" data-kact="undo">Hoàn tác</button></div>';
   if(!CLIPS.length)h+='<div class="empty">Chưa có clip nào đang mở. Tải file hoặc dán văn bản kịch bản rồi bấm "Nạp vào danh sách".</div>';
@@ -41,6 +42,7 @@ function vKichban(){
       h+='<div class="bar"><button class="btn sm" data-act="addline">+ Thêm dòng</button><button class="btn pri" data-auto="'+esc(c.id)+'">Ghép cảnh tự động clip này</button><a class="btn" href="#ghep" data-cur="'+esc(c.id)+'">Mở trang ghép</a></div></div>';
     }
   }
+  if(CLIPS.length)h+=kbExpBox();
   if(ARCH.length){var ab=batches(ARCH);
     h+='<details class="box"><summary><b>Đợt đã lưu trữ</b> ('+ab.length+' đợt, '+ARCH.length+' clip)</summary>'+ab.map(function(b){var cs=ARCH.filter(function(c){return (c.batch||'')===b});
       return '<div class="prow"><b>'+esc(batchName(b))+'</b><span class="meta">'+cs.length+' clip: '+esc(cs.map(function(c){return c.id}).join(', '))+'</span><button class="btn sm" data-kact="unarch" data-b="'+esc(b)+'">Mở lại đợt</button></div>'}).join('')+'</details>'}
@@ -51,11 +53,12 @@ function vKichban(){
 /* Nạp kịch bản: gắn đợt, clip mã mới thêm ngay; trùng mã thì hỏi. */
 function kbLoad(){
   var ta=document.getElementById('paste'),bi=document.getElementById('batchin');S.paste=ta?ta.value:S.paste;S.batchIn=bi?bi.value.trim():S.batchIn;
-  var out=parse(S.paste);if(!out.length){msg('Không đọc được clip nào. Mỗi clip cần một dòng bắt đầu bằng ##, xem mục Định dạng văn bản.');return}
+  var ck=kbCheck(S.paste),out=ck.clips;S.kbErr=ck.errs.length?{errs:ck.errs,nBad:ck.nBad,nOk:out.length}:null;
+  if(!out.length){if(S.kbErr){render();msg('Chưa nạp được clip nào: '+ck.errs.length+' lỗi định dạng, xem danh sách bên dưới.')}else msg('Không đọc được clip nào. Mỗi clip cần một dòng bắt đầu bằng ##, xem mục Định dạng văn bản.');return}
   var b=S.batchIn||weekLabel(),now=new Date().toISOString();out.forEach(function(n){n.batch=b;n.created=now});
   if(out.some(function(n){return !!clipById(n.id)})){S.imp={fresh:out,ch:{}};render();return}
   impDone(applyImport(out,{}),out)}
-function impDone(r,out){S.imp=null;S.paste='';S.kbBatch=null;S.edit=(out[0]&&clip(out[0].id))?out[0].id:S.edit;touchClips();
+function impDone(r,out){S.imp=null;if(!S.kbErr)S.paste='';S.kbBatch=null;S.edit=(out[0]&&clip(out[0].id))?out[0].id:S.edit;touchClips();
   msg('Đã nạp kịch bản: '+[r.add?r.add+' clip mới':'',r.upd?r.upd+' clip cập nhật lời ('+r.kept+' dòng không đổi giữ nguyên cảnh)':'',r.copy?r.copy+' bản mới':'',r.skip?r.skip+' bỏ qua':''].filter(Boolean).join(', ')+'. Sửa trong bảng nếu cần, rồi bấm Ghép cảnh tự động.')}
 document.addEventListener('click',function(e){
   var el=e.target.closest('[data-kact]');if(!el)return;var d=el.dataset,n=0;

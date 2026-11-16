@@ -21,6 +21,9 @@ js/
   source.js         Thư mục source: chọn thư mục, quét video, state.json, khóa, hình thu nhỏ
   clipstore.js      Tự lưu clip đang ghép, giọng đọc (.xuongclip/audio), ảnh bìa, clip đã xuất
   voice.js          Giọng đọc Gemini và căn giọng theo dòng
+  undo.js           Hoàn tác / làm lại theo từng clip trên màn Ghép clip
+  kbexport.js       Tải kịch bản theo người, kiểm định dạng khi nạp, danh sách cần quay thêm
+  tlframes.js       Dải hình tầng Video: khung đúng thời điểm của từng cảnh, tải dần
   voicemenu.js      Menu chọn giọng: nghe thử, phong cách đọc, tốc độ, mặc định theo người / gian, tạo lại giọng từng dòng
   wave.js           Sóng âm giọng đọc, vạch chia dòng
   export.js         Xuất video MP4 (WebCodecs + mp4-muxer), ảnh bìa, lưu file
@@ -48,16 +51,18 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
 
 ```
 <thư mục source>/.xuongclip/
-  state.json        version 7: library, deleted, products, rules, mergeSkip (thư viện)
+  state.json        version 8: library, deleted, products, rules, mergeSkip (thư viện)
                     clips, clipsArchived, clipsTrash, exported, info (kịch bản, clip đang ghép, clip đã xuất)
                     checkRules, checkCfg (luật kiểm tra, ngưỡng, vùng an toàn), milestones (hạn chót)
                     textStyles (kiểu chữ đã lưu, kiểu mặc định theo gian)
                     voiceDefaults (giọng mặc định theo người, theo gian), customVoices (giọng tự tạo, hiện chưa dùng)
+                    xuongCfg (ngưỡng "sát hạn" của màn Xưởng, giờ)
   state.bak.json    bản state.json trước lần ghi gần nhất
   state.v<N>.bak.json   bản trước khi nâng version (giữ lâu dài)
   audio/<mã clip>.wav   giọng đọc đã tạo hoặc tải lên
   audio/<mã clip>.nhac.<đuôi>   nhạc nền người dùng nạp cho clip
-  lock.json         khóa chống hai tab / hai máy cùng ghi (hết hạn sau 2 phút không cập nhật)
+  lock.json         khóa chống hai tab / hai máy cùng ghi (hết hạn sau 2 phút không cập nhật;
+                    đóng tab thì tự nhả, mở lại trong cùng trình duyệt không phải chờ)
   state.corrupt-<giờ>.json   chỉ có khi state.json bị hỏng
 ```
 
@@ -139,6 +144,19 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
 - Nền tối, toàn bộ màu là biến CSS ở đầu `css/style.css` (`--bg`, `--panel`, `--line`, `--fg`, `--muted`, `--accent`, `--ok`, `--warn`, `--err`).
 - Màn Ghép clip: thanh trên (chọn clip, đèn trạng thái, tổng thời lượng, Kiểm tra, Xuất), thư viện bên trái và Inspector bên phải thu gọn được (nhớ trạng thái), khung xem thử 9:16, danh sách dòng mỗi dòng một hàng, thanh thời gian nhiều tầng ở dưới, nút Toàn màn hình.
 - Phím tắt trên màn Ghép clip (không bắt khi đang gõ): Space phát/dừng, ← → một khung hình (Shift: 1 giây), [ ] dòng trước/sau, I / O điểm đầu/cuối đoạn video tại kim chạy, ? bảng phím tắt.
+
+## Bắt đầu
+
+Bước đầu tiên là **chọn thư mục source** (tab Thư viện source › Chọn thư mục source). Chưa chọn thì luật, cài đặt và clip chỉ nằm trong trình duyệt, mất khi xóa dữ liệu trình duyệt hoặc đổi máy.
+
+## Hoàn tác, kịch bản theo người, cần quay thêm
+
+- Màn Ghép clip: Ctrl+Z hoàn tác, Ctrl+Y hoặc Ctrl+Shift+Z làm lại (nút ↶ ↷ trên thanh trên), tối đa 100 bước mỗi clip, không bắt phím khi đang gõ.
+  Ghi được: đổi cảnh, kéo biên, ranh giới giọng, chữ hiện, kiểu chữ, chọn giọng, bộ lọc, khung, thời lượng, nhạc nền, khung kết. Tạo hoặc tải giọng mới thì lịch sử của clip đó bắt đầu lại.
+- Tab Kịch bản › Tải kịch bản theo người: mỗi người một file `kichban_<người>_<ngày>.txt` (không dấu) đúng định dạng nạp; nhiều người thì tải lần lượt.
+- Nạp kịch bản cả tuần: clip trùng mã hỏi ghi đè, tạo bản mới hay bỏ qua; clip lỗi định dạng không được nạp và được báo kèm số dòng.
+- Tab Thiếu source › Danh sách cần quay thêm: gom theo sản phẩm và cảnh cần, đếm số lần cần; Sao chép hoặc tải .txt. Tool không tự gửi cho ai.
+- Màn Xưởng: ngưỡng "sát hạn" đổi ở Cài đặt (mặc định 24 giờ), lọc được theo đợt kịch bản.
 
 ## Mở thử
 

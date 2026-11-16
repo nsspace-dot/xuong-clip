@@ -50,7 +50,7 @@ function clipFromRec(o){
   if(!c.lines.length)c.lines.push({t:'',need:'',seg:null,infos:[],choose:false});
   return c}
 function expToRec(x){return pickKeys(x,['id','clipId','fname','txt','g','name','d','ext','res','mb','date','cap','posted','savedIn'])}
-function clipsState(){return {clips:CLIPS.map(clipToRec),clipsArchived:ARCH.map(clipToRec),clipsTrash:TRASH.map(clipToRec),exported:EXP.map(expToRec),info:pickKeys(INFO,['size','fg','bg','pos','mode','secs']),checkRules:chkToState().checkRules,checkCfg:chkToState().checkCfg,milestones:milesToState(),textStyles:tsToState(),voiceDefaults:vdToState(),customVoices:cvToState()}}
+function clipsState(){return {clips:CLIPS.map(clipToRec),clipsArchived:ARCH.map(clipToRec),clipsTrash:TRASH.map(clipToRec),exported:EXP.map(expToRec),info:pickKeys(INFO,['size','fg','bg','pos','mode','secs']),checkRules:chkToState().checkRules,checkCfg:chkToState().checkCfg,milestones:milesToState(),textStyles:tsToState(),voiceDefaults:vdToState(),customVoices:cvToState(),xuongCfg:xcfgToState()}}
 /* Nạp phần clip từ state.json. Clip đang có trong bộ nhớ (nạp trước khi chọn thư mục) được giữ lại và thêm vào. */
 function clipsFromState(o){
   var mem=SRCF.clipsLoaded?[]:CLIPS.slice(),memExp=SRCF.clipsLoaded?[]:EXP.slice();
@@ -61,6 +61,7 @@ function clipsFromState(o){
   (Array.isArray(o.exported)?o.exported:[]).forEach(function(x){if(x&&x.id)EXP.push(expToRec(x))});
   milesFromState(o); // mốc hạn chót (version 5)
   tsFromState(o); // kiểu chữ đã lưu (version 6)
+  xcfgFromState(o); // ngưỡng sát hạn (version 8)
   vdFromState(o); // giọng mặc định theo người / gian, giọng tự tạo (version 7)
   chkFromState(o); // luật kiểm tra (version 4); không có thì dùng luật mặc định
   if(o.info&&typeof o.info==='object')['size','fg','bg','pos','mode','secs'].forEach(function(k){if(o.info[k]!=null)INFO[k]=o.info[k]});
@@ -68,7 +69,7 @@ function clipsFromState(o){
   memExp.forEach(function(x){if(!EXP.some(function(y){return y.id===x.id}))EXP.push(x)});
   SRCF.clipsLoaded=true;S.clipUndo=null;
   return added}
-function clipsReset(){if(!SRCF.clipsLoaded)return;TS={list:[],byGian:{}};VDEF={person:{},gian:{}};CVOICES=[];CLIPS=[];ARCH=[];TRASH=[];EXP=[];S.edit=null;S.cur=null;S.clipUndo=null;S.imp=null;SRCF.clipsLoaded=false;CLIPSIG=''}
+function clipsReset(){if(!SRCF.clipsLoaded)return;TS={list:[],byGian:{}};VDEF={person:{},gian:{}};CVOICES=[];XCFG={nearH:24};CLIPS=[];ARCH=[];TRASH=[];EXP=[];S.edit=null;S.cur=null;S.clipUndo=null;S.imp=null;SRCF.clipsLoaded=false;CLIPSIG=''}
 function clipById(id){return CLIPS.concat(ARCH,TRASH).filter(function(c){return c.id===id})[0]||null}
 function uniqueClipId(id){if(!clipById(id))return id;for(var k=2;;k++){var n=id+'-'+k;if(!clipById(n))return n}}
 

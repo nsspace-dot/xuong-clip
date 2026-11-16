@@ -11,7 +11,7 @@ var SRCF={ok:!!(window.showDirectoryPicker&&window.crypto&&crypto.subtle),h:null
 // Khóa do chính tab này để lại trước khi tải lại trang (pagehide ghi id vào sessionStorage) thì coi là của mình.
 // Tab nhân bản không có dấu này vì tab gốc chưa rời trang.
 try{SRCF.prev=sessionStorage.getItem('xuongclip_left')||'';sessionStorage.removeItem('xuongclip_left')}catch(e){}
-var STATE_VER=7,XDIR='.xuongclip',LOCK_TTL=120000,VEXT=/\.(mp4|mov|m4v|webm)$/i;
+var STATE_VER=8,XDIR='.xuongclip',LOCK_TTL=120000,VEXT=/\.(mp4|mov|m4v|webm)$/i;
 var OSTAT=['thô','đã dựng','đã đăng'];
 
 /* ---------- tiện ích nhỏ ---------- */
@@ -108,8 +108,13 @@ async function srcOpen(){
 
 /* ---------- khóa chống mở trùng ---------- */
 async function readLock(){var t=await readTxt(await xdir(),'lock.json');if(!t)return null;try{return JSON.parse(t)}catch(e){return null}}
-function lockOther(l){return !!(l&&l.owner&&l.owner!==SRCF.me&&l.owner!==SRCF.prev&&Math.abs(Date.now()-(+l.at||0))<LOCK_TTL)}
-async function writeLock(){await writeTxt(await xdir(),'lock.json',JSON.stringify({owner:SRCF.me,at:Date.now(),updated:new Date().toISOString()}))}
+function lockOther(l){return !!(l&&l.owner&&l.owner!==SRCF.me&&l.owner!==SRCF.prev&&!lockFreed(l.owner)&&Math.abs(Date.now()-(+l.at||0))<LOCK_TTL)}
+/* Tab đóng lại ghi tên khóa của nó vào localStorage ("đã nhả"): mở lại trong cùng trình duyệt thì không phải chờ khóa hết hạn,
+   kể cả khi lệnh xóa lock.json lúc đóng tab chưa kịp chạy. Máy / trình duyệt khác vẫn dựa vào hạn 2 phút. */
+function freedList(){try{return JSON.parse(localStorage.getItem('xuongclip_freed')||'[]').filter(function(x){return x&&x.o&&Date.now()-x.t<LOCK_TTL*2})}catch(e){return []}}
+function lockFreed(o){return freedList().some(function(x){return x.o===o})}
+function markFreed(o,on){try{var a=freedList().filter(function(x){return x.o!==o});if(on)a.push({o:o,t:Date.now()});localStorage.setItem('xuongclip_freed',JSON.stringify(a.slice(-20)))}catch(e){}}
+async function writeLock(){if(!SRCF.leaving)markFreed(SRCF.me,false);await writeTxt(await xdir(),'lock.json',JSON.stringify({owner:SRCF.me,at:Date.now(),updated:new Date().toISOString()}))}
 async function takeLock(){
   var l=await readLock();if(lockOther(l)){setRO(l);return false}
   await writeLock();await sleep(400);
@@ -148,7 +153,7 @@ async function loadState(){
   }
   SRCF.fileSavedAt=Date.parse(use.savedAt)||0; // giờ ghi gần nhất trong file, cho chỉ báo "Đã lưu" lúc vừa mở
   var v=+use.version||1;SRCF.newer=v>STATE_VER?v:0;SRCF.extra={};
-  for(var k in use)if(['version','savedAt','library','deleted','products','rules','mergeSkip','clips','clipsArchived','clipsTrash','exported','info','checkRules','checkCfg','milestones','textStyles','voiceDefaults','customVoices'].indexOf(k)<0)SRCF.extra[k]=use[k];
+  for(var k in use)if(['version','savedAt','library','deleted','products','rules','mergeSkip','clips','clipsArchived','clipsTrash','exported','info','checkRules','checkCfg','milestones','textStyles','voiceDefaults','customVoices','xuongCfg'].indexOf(k)<0)SRCF.extra[k]=use[k];
   LIB={};(use.library||[]).forEach(function(o){if(o&&o.id&&o.path){var r=fromRec(o);LIB[r.id]=r}});
   SRCF.deleted=[];(Array.isArray(use.deleted)?use.deleted:[]).forEach(function(id){id=String(id);if(!isDel(id))SRCF.deleted.push(id)});
   catalogFromState(use);
@@ -259,8 +264,9 @@ async function srcSave(){
 }
 function srcFlush(){touchClips(true);if(SRCF.dirty)srcSave()}
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')srcFlush();else if(SRCF.h&&SRCF.open&&SRCF.ro)srcCheckRO(false)});
-window.addEventListener('pagehide',function(){try{if(SRCF.open&&!SRCF.ro)sessionStorage.setItem('xuongclip_left',SRCF.me)}catch(e){}srcFlush();releaseLock()});
-window.addEventListener('pageshow',function(e){if(e.persisted&&SRCF.open&&!SRCF.ro&&SRCF.perm==='granted')takeLock().then(function(){render()}).catch(function(){})});
+window.addEventListener('pagehide',function(){try{if(SRCF.open&&!SRCF.ro)sessionStorage.setItem('xuongclip_left',SRCF.me)}catch(e){}SRCF.leaving=true;if(!SRCF.ro)markFreed(SRCF.me,true);srcFlush();releaseLock()});
+window.addEventListener('beforeunload',function(){SRCF.leaving=true;if(!SRCF.ro)markFreed(SRCF.me,true);setTimeout(function(){SRCF.leaving=false},3000)});
+window.addEventListener('pageshow',function(e){if(e.persisted){SRCF.leaving=false;if(SRCF.me)markFreed(SRCF.me,false)}if(e.persisted&&SRCF.open&&!SRCF.ro&&SRCF.perm==='granted')takeLock().then(function(){render()}).catch(function(){})});
 
 /* ---------- hiển thị trạng thái ---------- */
 function saveStatus(){

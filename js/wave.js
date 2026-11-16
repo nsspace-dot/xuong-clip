@@ -8,7 +8,6 @@ function voiceBox(c){
 function waveBox(c){
   if(!c.audioUrl||!c.audioDur)return '';
   return '<div class="wavew"><div class="lab">Sóng giọng và ranh giới các dòng</div><canvas id="wavec" width="540" height="168" role="img" aria-label="Sóng giọng với vạch ranh giới các dòng"></canvas><div class="meta" id="wavei">Kéo vạch đứng để chỉnh. Mỗi dòng cũng có ô nhập giây và nút nghe quanh vạch.</div>'+
-   '<div class="bar"><button class="btn sm" data-wx="1">'+(S.wx?'Thu nhỏ sóng':'Phóng to sóng')+'</button></div>'+
    '<label class="note" style="display:block"><input type="checkbox" id="wsnap" '+(S.snapOff?'':'checked')+'> Vạch tự hít vào chỗ lặng (giữ Shift để tắt tạm)</label></div>'}
 function waveWide(c){
   if(!S.wx||!c.audioUrl||!c.audioDur)return '';

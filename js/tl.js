@@ -11,11 +11,12 @@ function tlHTML(c){
    '<button class="btn xs" data-tl="keys" title="Phím tắt (?)">Phím tắt</button></div>'+
    '<div class="tlbody"><div class="tlheads"><div style="height:'+TLH.ruler+'px"></div><div class="tlhd" style="height:'+TLH.video+'px">Video</div><div class="tlhd" style="height:'+TLH.voice+'px">Giọng</div><div class="tlhd" style="height:'+TLH.text+'px">Chữ</div><div class="tlhd" style="height:'+TLH.music+'px">Nhạc</div></div>'+
    '<div class="tlsc" id="tlsc"><div class="tlin" id="tlin"></div></div></div></div>'+(S.tlKeys?tlKeysHTML():'')}
-function tlKeysHTML(){var k=[['Space','Phát / dừng'],['← →','Lùi / tới một khung hình'],['Shift + ← →','Lùi / tới 1 giây'],['[  ]','Dòng trước / dòng sau'],['I','Đặt điểm đầu đoạn video của dòng đang chọn tại kim chạy'],['O','Đặt điểm cuối đoạn video của dòng đang chọn tại kim chạy'],['?','Bật / tắt bảng này'],['Esc','Đóng bảng, thoát toàn màn hình']];
+function tlKeysHTML(){var k=[['Space','Phát / dừng'],['← →','Lùi / tới một khung hình'],['Shift + ← →','Lùi / tới 1 giây'],['[  ]','Dòng trước / dòng sau'],['I','Đặt điểm đầu đoạn video của dòng đang chọn tại kim chạy'],['O','Đặt điểm cuối đoạn video của dòng đang chọn tại kim chạy'],['Ctrl + Z','Hoàn tác thao tác sửa trên clip đang mở (tối đa '+UNDO_MAX+' bước mỗi clip)'],['Ctrl + Y / Ctrl + Shift + Z','Làm lại'],['?','Bật / tắt bảng này'],['Esc','Đóng bảng, menu giọng, thoát toàn màn hình']];
   return '<div class="tlkeys" id="tlkeys" role="dialog" aria-label="Phím tắt"><div class="tlkb"><b>Phím tắt</b><table>'+k.map(function(x){return '<tr><td><kbd>'+x[0]+'</kbd></td><td>'+x[1]+'</td></tr>'}).join('')+'</table><div class="meta">Không bắt phím khi đang gõ trong ô nhập.</div><div class="bar"><button class="btn sm" data-tl="keys">Đóng</button></div></div></div>'}
 /* Dựng nội dung theo độ rộng hiện tại (gọi sau mỗi lần vẽ màn Ghép clip). */
 function tlBuild(){
   var c=clip(S.cur),inn=document.getElementById('tlin');if(!c||!inn)return;
+  FRQ=[]; // hàng đợi khung hình chỉ giữ những khung đang hiện
   var tot0=timeline(c),tot=tot0+endDur(c),pps=tlPps(c),W=Math.ceil(tot*pps)+40,H=TLH.ruler+TLH.video+TLH.voice+TLH.text+TLH.music,X=function(t){return Math.round(t*pps)},h='';
   inn.style.width=W+'px';inn.style.height=H+'px';inn._pps=pps;
   var cur=c.lines[S.li]||c.lines[0];h+='<div class="tlsel" style="left:'+X(cur.s)+'px;width:'+Math.max(2,X(cur.e)-X(cur.s))+'px"></div>';
@@ -26,7 +27,7 @@ function tlBuild(){
     if(sg){if(!sg.strip)ensureStrip(sg);var spd=l.spd||1,d=sdur(sg),span=Math.max(0.2,(l.e-l.s)*spd),bgW=Math.max(w,w*d/span);
       if(sg.strip)st='background-image:url('+sg.strip+');background-size:'+bgW+'px 100%;background-position:'+(-(l.segIn||0)/d*bgW)+'px 0;'}
     v+='<div class="tlv'+(i===S.li?' cur':'')+(sg?'':' miss')+' lv-'+lv+'" data-tlv="'+i+'" style="left:'+x0+'px;width:'+w+'px;'+st+'" title="Dòng '+(i+1)+': '+esc(sg?sg.label+' · nguồn '+tc(l.segIn||0)+(l.segOut?' – '+tc(l.segOut):''):'chưa có cảnh')+'">'+
-     '<span class="tlvl">'+(i+1)+(sg?'':' · thiếu cảnh')+'</span>'+(sg?'<span class="hd l" data-tlh="L|'+i+'" title="Kéo để đổi điểm đầu đoạn video"></span><span class="hd r" data-tlh="R|'+i+'" title="Kéo để đổi điểm cuối đoạn video"></span>':'')+'</div>'});
+     (sg?tlFramesHTML(l,sg,w):'')+'<span class="tlvl">'+(i+1)+(sg?'':' · thiếu cảnh')+'</span>'+(sg?'<span class="hd l" data-tlh="L|'+i+'" title="Kéo để đổi điểm đầu đoạn video"></span><span class="hd r" data-tlh="R|'+i+'" title="Kéo để đổi điểm cuối đoạn video"></span>':'')+'</div>'});
   if(endOn(c))v+='<div class="tlv tle" style="left:'+X(tot0)+'px;width:'+Math.max(4,X(tot)-X(tot0))+'px" title="Khung kết '+fmt1(endDur(c))+'s"><span class="tlvl">Kết</span></div>';
   h+='<div class="tlt" style="top:'+y+'px;height:'+TLH.video+'px">'+v+'</div>';y+=TLH.video;
   // tầng giọng
@@ -41,7 +42,7 @@ function tlBuild(){
   h+='<div class="tlt" style="top:'+y+'px;height:'+TLH.text+'px">'+tx+'</div>';y+=TLH.text;
   h+='<div class="tlt music" style="top:'+y+'px;height:'+TLH.music+'px">'+tlMusicHTML(c,X)+'</div>';
   h+='<div class="tlph" id="tlph" style="left:'+X(S.t)+'px"><span></span></div>';
-  inn.innerHTML=h;tlWave(c);
+  inn.innerHTML=h;tlWave(c);frStart();
 }
 function tlWave(c){var cv=document.getElementById('tlwave'),inn=document.getElementById('tlin');if(!cv||!inn||!c.audioUrl||!c.audioDur)return;
   if(c.peaksUrl!==c.audioUrl||!c.peaks){ensurePeaks(c,function(){tlWave(c)});return}

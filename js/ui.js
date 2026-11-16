@@ -15,6 +15,7 @@ function vThieu(){
   var m=missingAll(S.thieuClip),ks=Object.keys(m);
   var txt=ks.map(function(k){return k+':\n'+m[k].map(function(x){return '- '+(x.l.need||('cảnh cho câu: '+x.l.t))+' ('+x.c.id+', dòng '+(x.i+1)+')'}).join('\n')}).join('\n\n');
   var h='<h1>Thiếu source</h1><p class="sub">Mỗi cảnh thiếu có ba hướng xử lý: dùng cảnh có sẵn (chỉ hiện khi có video cùng sản phẩm đủ '+SG.min+' điểm), đổi thoại cho khớp cảnh có sẵn, hoặc quay thêm. Tool không gợi ý video khác sản phẩm, video chưa gắn nhãn'+(SG.allowGuess?'':' hay nhãn đoán chưa xác nhận')+'.</p>';
+  h+=shootBox();
   if(S.thieuClip)h+='<div class="w warn">Đang lọc theo clip <b>'+esc(S.thieuClip)+'</b>. <button class="btn sm" data-xact="thieuall">Xem tất cả clip</button></div>';
   if(!ks.length)return h+'<div class="empty">Không có cảnh nào thiếu. Nếu chưa thấy gì, hãy ghép cảnh tự động ở tab Kịch bản trước.</div>';
   ks.forEach(function(k){
@@ -57,11 +58,18 @@ function suggestSettings(){
   return '<div class="set"><b>Gợi ý cảnh</b><div class="meta">Chỉ gợi ý video cùng sản phẩm (theo tên chuẩn và tên tương đương). Video chưa gắn nhãn không bao giờ được gợi ý. Điểm tối đa 100: khớp "cảnh cần" với tag/mô tả AI hoặc tên video (60), đủ dài (15), chưa dùng (15), video thô (5). Dưới ngưỡng thì không gợi ý và cảnh vào tab Thiếu source.</div>'+
    '<div class="row2"><div><label class="lab" for="sgmin">Ngưỡng điểm tối thiểu (10–95)</label><input type="number" id="sgmin" min="10" max="95" step="5" value="'+SG.min+'"></div></div>'+
    '<label class="ck"><input type="checkbox" id="sgguess" '+(SG.allowGuess?'checked':'')+'><span>Cho phép gợi ý cả video có nhãn sản phẩm "đoán" chưa xác nhận</span></label></div>'}
+/* Dòng hướng dẫn bước đầu: chưa chọn thư mục source thì mọi thứ chỉ nằm trong trình duyệt. */
+function startHint(always){if(SRCF.h&&SRCF.open)return always?'<div class="hint ok">Đang lưu vào thư mục source "'+esc(SRCF.h.name)+'" (.xuongclip/state.json). Riêng API key, model, người phụ trách nằm trong trình duyệt này.</div>':'';
+  return '<div class="hint warn"><b>Bước đầu tiên: chọn thư mục source</b> (tab <a href="#thuvien">Thư viện source</a> › Chọn thư mục source). Chưa chọn thì luật, cài đặt và clip chỉ nằm trong trình duyệt này, mất khi xóa dữ liệu trình duyệt hoặc đổi máy.</div>'}
+function cgroup(id,t,body,one){return '<section class="cgrp" id="cg-'+id+'"><h2 class="cgh">'+t+'</h2><div class="cgb'+(one?' one':'')+'">'+body+'</div></section>'}
 function vCaidat(){
-  return '<h1>Cài đặt</h1><p class="sub">Chỉnh người phụ trách, danh mục sản phẩm, quy tắc gắn nhãn, chữ thông tin, thư mục lưu clip, giọng Gemini và bảng luật. Thay đổi được nhớ trong trình duyệt này.</p>'+
-  gemSettings()+voiceDefaultsSettings()+checkRulesSettings()+checkFormSettings()+safeSettings()+
-  peopleSettings()+catalogSettings()+rulesSettings()+suggestSettings()+infoSettings()+folderSettings()+deletedSettings()+qualitySettings()+tsSettings()+'<div class="set"><div class="meta">Chưa có: logo từng gian. Nhạc nền chọn riêng cho từng clip ở màn Ghép clip.</div></div>';
+  var G=[['luu','Thư mục và lưu trữ',folderSettings()+deletedSettings()],['giong','Người và giọng đọc',peopleSettings()+gemSettings()+voiceDefaultsSettings()],
+    ['luat','Kiểm tra luật',checkRulesSettings()+checkFormSettings()+safeSettings()],['sp','Sản phẩm và gợi ý cảnh',catalogSettings()+rulesSettings()+suggestSettings()],
+    ['chu','Chữ, hình và xuất',infoSettings()+tsSettings()+qualitySettings()],['xuong','Màn Xưởng',xcfgSettings()+'<div class="set"><div class="meta">Chưa có: logo từng gian. Nhạc nền chọn riêng cho từng clip ở màn Ghép clip.</div></div>']];
+  return '<div class="cset"><h1>Cài đặt</h1>'+startHint(true)+'<nav class="cnav" aria-label="Nhóm cài đặt">'+G.map(function(g){return '<a class="chip" href="#caidat" data-cgo="'+g[0]+'">'+g[1]+'</a>'}).join('')+'</nav>'+
+   G.map(function(g){return cgroup(g[0],g[1],g[2],g[0]==='luat'||g[0]==='sp')}).join('')+'</div>';
 }
+document.addEventListener('click',function(e){var a=e.target.closest('[data-cgo]');if(!a)return;e.preventDefault();var s=document.getElementById('cg-'+a.dataset.cgo);if(s)s.scrollIntoView({block:'start'})});
 function infoSettings(){
   var pos=[['top','Phía trên'],['mid','Giữa'],['bottom','Phía dưới']],md=[['line','Đến hết câu thoại'],['secs','Một số giây cố định']];
   return '<div class="set"><b>Chữ thông tin trên hình</b><div class="row2"><div><label class="lab" for="i1">Cỡ chữ (24–90)</label><input type="number" id="i1" min="24" max="90" data-info="size" value="'+INFO.size+'"></div>'+
@@ -73,7 +81,7 @@ function infoSettings(){
    '<div class="meta">Xem trước:</div><div style="width:160px;aspect-ratio:9/16;position:relative;border-radius:12px;overflow:hidden;background:linear-gradient(160deg,#8a3a1f,#3b1c14);color:#fff"><div id="infoprev" style="position:absolute;inset:0">'+infoPrevHTML()+'</div></div></div>';
 }
 function folderSettings(){
-  return '<div class="set"><b>Thư mục lưu clip</b><div class="meta">'+(S.dir?'Đang lưu vào: <b>'+esc(S.dir.name)+'</b>. Mỗi lần mở lại tool, lần xuất đầu Chrome có thể hỏi cấp quyền thư mục.':'Chưa chọn: clip xuất xong sẽ tải về thư mục Downloads.')+' Tên file tự đặt theo dạng MÃ_Gian_ngày-tháng. Nên tạo một thư mục riêng, đừng chọn Downloads hay Desktop vì Chrome thường chặn.</div>'+
+  return '<div class="set"><b>Thư mục lưu clip</b><div class="meta">'+(S.dir?'Đang lưu vào: <b>'+esc(S.dir.name)+'</b>. Mỗi lần mở lại tool, lần xuất đầu Chrome có thể hỏi cấp quyền thư mục.':'Chưa chọn: clip xuất xong sẽ tải về thư mục Downloads.')+' Tên file theo mẫu ở mục Chất lượng và tên file xuất. Nên tạo một thư mục riêng, đừng chọn Downloads hay Desktop vì Chrome thường chặn.</div>'+
    '<div class="bar"><button class="btn pri" data-act="pickdir">Chọn thư mục</button>'+(S.dir?'<button class="btn" data-act="cleardir">Bỏ chọn</button>':'')+'</div></div>';
 }
 function drawPhone(){

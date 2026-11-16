@@ -6,7 +6,7 @@
 var STAGES=[['kichban','Kịch bản'],['ghep','Ghép cảnh'],['kiemtra','Kiểm tra'],['ready','Sẵn sàng xuất'],['exported','Đã xuất'],['posted','Đã đăng']];
 var STG={};STAGES.forEach(function(s,i){STG[s[0]]=i});
 var MILES=[];
-S.xf=(function(){var d={who:[],g:[],st:[],err:false,miss:false,view:'stage'};try{var o=JSON.parse(localStorage.getItem('xuongclip_xf')||'null');if(o)for(var k in d)if(k in o)d[k]=o[k]}catch(e){}return d})();
+S.xf=(function(){var d={who:[],g:[],st:[],b:[],err:false,miss:false,view:'stage'};try{var o=JSON.parse(localStorage.getItem('xuongclip_xf')||'null');if(o)for(var k in d)if(k in o)d[k]=o[k]}catch(e){}return d})();
 S.xundo=null;S.thieuClip=null;
 function saveXf(){try{localStorage.setItem('xuongclip_xf',JSON.stringify(S.xf))}catch(e){}}
 
@@ -27,9 +27,9 @@ function clipWho(c){return c.who||''}
 
 /* ---------- lọc ---------- */
 function xFiltered(){var f=S.xf;return CLIPS.filter(function(c){var r=checkClip(c),st=clipStage(c);
-  return (!f.who.length||f.who.indexOf(clipWho(c))>=0)&&(!f.g.length||f.g.indexOf(c.g||'')>=0)&&(!f.st.length||f.st.indexOf(st)>=0)&&
+  return (!f.who.length||f.who.indexOf(clipWho(c))>=0)&&(!f.g.length||f.g.indexOf(c.g||'')>=0)&&(!f.st.length||f.st.indexOf(st)>=0)&&(!f.b||!f.b.length||f.b.indexOf(c.batch||'')>=0)&&
     (!f.err||r.errs.length>0)&&(!f.miss||(!isDirect(c)&&segCount(c)<c.lines.length))})}
-function xActive(){var f=S.xf;return !!(f.who.length||f.g.length||f.st.length||f.err||f.miss)}
+function xActive(){var f=S.xf;return !!(f.who.length||f.g.length||f.st.length||(f.b&&f.b.length)||f.err||f.miss)}
 
 /* ---------- hạn chót ---------- */
 function milePct(m){var list=CLIPS;if(!list.length)return 0;var t=STG[m.target]||STG.ready;return Math.round(list.filter(function(c){return STG[clipStage(c)]>=t}).length/list.length*100)}
@@ -38,7 +38,7 @@ function mileState(m){var at=new Date(m.at).getTime(),now=Date.now(),pct=milePct
   if(!isFinite(at))return {cls:'',txt:'Chưa có ngày giờ',pct:pct,done:done};
   if(done)return {cls:'ok',txt:(left>=0?'Đã đạt · còn '+durTxt(left):'Đã đạt'),pct:pct,done:true};
   if(left<0)return {cls:'err',txt:'Quá hạn '+durTxt(left),pct:pct,done:false};
-  if(left<24*36e5)return {cls:'warn',txt:'Còn '+durTxt(left),pct:pct,done:false};
+  if(left<XCFG.nearH*36e5)return {cls:'warn',txt:'Còn '+durTxt(left),pct:pct,done:false};
   return {cls:'',txt:'Còn '+durTxt(left),pct:pct,done:false}}
 function fmtAt(s){var d=new Date(s);if(!isFinite(d))return '';var p=function(n){return ('0'+n).slice(-2)};return p(d.getHours())+':'+p(d.getMinutes())+' ngày '+p(d.getDate())+'/'+p(d.getMonth()+1)}
 function mileHTML(m,i){var s=mileState(m),tn=(STAGES[STG[m.target]]||STAGES[3])[1];
@@ -65,7 +65,7 @@ function xCard(c){var r=checkClip(c),n=segCount(c),N=c.lines.length,miss=N-n,tot
 
 /* ---------- màn Xưởng ---------- */
 function vXuong(){
-  var h='<div class="xw5"><div class="xhead"><h1>Xưởng</h1>';
+  var h='<div class="xw5">'+startHint(false)+'<div class="xhead"><h1>Xưởng</h1>';
   var all=CLIPS,list=xFiltered(),errs=0,warns=0,errClips=0,done=0;
   list.forEach(function(c){var r=checkClip(c);errs+=r.errs.length;warns+=r.warns.length;if(r.errs.length)errClips++;if(STG[clipStage(c)]>=STG.exported)done++});
   h+='<div class="xsum"><div><b>'+list.length+'</b><span>clip'+(list.length!==all.length?' (lọc từ '+all.length+')':'')+'</span></div><div class="ok"><b>'+done+'</b><span>đã xong (đã xuất / đã đăng)</span></div><div><b>'+(list.length-done)+'</b><span>còn lại</span></div>'+
@@ -76,11 +76,12 @@ function vXuong(){
    '<details class="mnew"'+(S.medit!=null?' open':'')+'><summary class="btn sm">'+(S.medit!=null?'Sửa mốc':'+ Thêm mốc')+'</summary>'+mileForm()+'</details></div>';
   if(!all.length)return h+'<div class="empty">Chưa có clip nào. Nạp kịch bản ở tab Kịch bản.</div></div>';
   // lọc
-  var f=S.xf,whos=[],gs=[];all.forEach(function(c){var w=clipWho(c);if(whos.indexOf(w)<0)whos.push(w);if(gs.indexOf(c.g||'')<0)gs.push(c.g||'')});
+  var f=S.xf,whos=[],gs=[],bs=batches(all);if(!f.b)f.b=[];all.forEach(function(c){var w=clipWho(c);if(whos.indexOf(w)<0)whos.push(w);if(gs.indexOf(c.g||'')<0)gs.push(c.g||'')});
   var chip=function(on,k,v,t){return '<button class="chip'+(on?' on':'')+'" data-xf="'+k+'" data-v="'+esc(v)+'">'+esc(t)+'</button>'};
   h+='<div class="xfil"><div class="xview"><button class="chip'+(f.view==='stage'?' on':'')+'" data-xact="view" data-v="stage">Theo trạm</button><button class="chip'+(f.view==='person'?' on':'')+'" data-xact="view" data-v="person">Theo người</button></div>'+
    '<span class="lab">Người</span>'+whos.map(function(w){return chip(f.who.indexOf(w)>=0,'who',w,w||'Chưa giao')}).join('')+
    '<span class="lab">Gian</span>'+gs.map(function(g){return chip(f.g.indexOf(g)>=0,'g',g,g||'Chưa ghi gian')}).join('')+
+   '<span class="lab">Đợt</span>'+bs.map(function(b){return chip(f.b.indexOf(b)>=0,'b',b,b||'Chưa ghi đợt')}).join('')+
    '<span class="lab">Trạm</span>'+STAGES.map(function(s){return chip(f.st.indexOf(s[0])>=0,'st',s[0],s[1])}).join('')+
    chip(f.err,'err','1','Có lỗi')+chip(f.miss,'miss','1','Thiếu source')+(xActive()?'<button class="btn xs" data-xact="clear">Bỏ lọc</button>':'')+'</div>';
   var by={};STAGES.forEach(function(s){by[s[0]]=[]});list.forEach(function(c){by[clipStage(c)].push(c)});
@@ -107,7 +108,7 @@ document.addEventListener('click',function(e){
   if(d.xf){var f=S.xf;if(d.xf==='err'||d.xf==='miss')f[d.xf]=!f[d.xf];else{var a=f[d.xf],k=a.indexOf(d.v);if(k>=0)a.splice(k,1);else a.push(d.v)}saveXf();render();return}
   switch(d.xact){
     case 'view':S.xf.view=d.v;saveXf();render();return;
-    case 'clear':S.xf={who:[],g:[],st:[],err:false,miss:false,view:S.xf.view};saveXf();render();return;
+    case 'clear':S.xf={who:[],g:[],st:[],b:[],err:false,miss:false,view:S.xf.view};saveXf();render();return;
     case 'post':var was=clip(d.id)&&clip(d.id).posted;setPosted([d.id],true);S.xundo={label:'đánh dấu '+d.id+' đã đăng',ids:[d.id],on:!!was};render();return;
     case 'unpost':var c0=clip(d.id),prev=c0&&c0.postedAt;setPosted([d.id],false);S.xundo={label:'bỏ đánh dấu đã đăng của '+d.id,ids:[d.id],on:true,at:prev};render();return;
     case 'undo':var u=S.xundo;if(!u)return;setPosted(u.ids,u.on);if(u.on&&u.at)u.ids.forEach(function(id){var cc=clip(id);if(cc)cc.postedAt=u.at});S.xundo=null;touchClips();render();return;
@@ -126,3 +127,10 @@ document.addEventListener('click',function(e){
 setInterval(function(){if(S.tab!=='xuong')return;MILES.forEach(function(m,i){var el=document.querySelector('[data-mcd="'+i+'"]'),box=document.querySelector('[data-mile="'+i+'"]');if(!el)return;var s=mileState(m);el.textContent=s.txt;if(box)box.className='mile '+s.cls})},30000);
 function milesToState(){return MILES.map(function(m){return {id:m.id,name:m.name,at:m.at,pct:m.pct,target:m.target}})}
 function milesFromState(o){MILES=(Array.isArray(o.milestones)?o.milestones:[]).filter(function(m){return m&&m.at}).map(function(m){return {id:String(m.id||('m'+Math.random().toString(16).slice(2,8))),name:String(m.name||'Mốc'),at:String(m.at),pct:Math.max(1,Math.min(100,Math.round(+m.pct)||70)),target:STG[m.target]>0?m.target:'ready'}})}
+
+/* Ngưỡng "sát hạn" (giờ), lưu trong state.json (xuongCfg, version 8). */
+var XCFG={nearH:24};
+function xcfgFromState(o){var x=o&&o.xuongCfg;XCFG={nearH:24};if(x&&isFinite(+x.nearH)&&+x.nearH>0)XCFG.nearH=Math.min(720,+x.nearH)}
+function xcfgToState(){return {nearH:XCFG.nearH}}
+function xcfgSettings(){return '<div class="set"><b>Màn Xưởng</b><div class="row2"><div><label class="lab" for="nearh">Ngưỡng "sát hạn" (giờ, mặc định 24)</label><input type="number" id="nearh" min="1" max="720" step="1" value="'+XCFG.nearH+'"></div></div><div class="meta">Mốc chưa đạt mục tiêu mà còn ít hơn số giờ này thì hiện màu vàng.</div></div>'}
+document.addEventListener('change',function(e){if(e.target.id!=='nearh')return;var v=Math.round(+e.target.value);XCFG.nearH=v>0?Math.min(720,v):24;e.target.value=XCFG.nearH;touchClips();markDirty()});

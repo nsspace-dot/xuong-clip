@@ -37,14 +37,14 @@ function lfBar(){
   f.prods=f.prods.filter(function(n){return !!findProduct(n)});
   var nsel=selIds().length;
   return '<div class="libbar">'+
-   '<div class="lfrow"><input type="search" id="libq" placeholder="Tìm theo tên hoặc đường dẫn" value="'+esc(f.q)+'" aria-label="Tìm video" style="max-width:260px">'+
+   '<div class="lfrow"><span class="lfl">Lọc</span><input type="search" id="libq" placeholder="Tìm theo tên hoặc đường dẫn" value="'+esc(f.q)+'" aria-label="Tìm video" style="max-width:260px">'+
     ['thô','đã dựng','đã đăng'].map(function(o){return chip(f.st.indexOf(o)>=0,'st',o,o)}).join('')+
     chip(f.unl,'unl','1','Chưa gắn nhãn')+chip(f.guess,'guess','1','Nhãn đoán')+chip(f.miss,'miss','1','Mất file')+
     '<select data-lfs="ai" aria-label="Lọc theo tag AI"><option value="">Tag AI: tất cả</option><option value="yes" '+(f.ai==='yes'?'selected':'')+'>Đã tag AI</option><option value="no" '+(f.ai==='no'?'selected':'')+'>Chưa tag AI</option></select>'+
     '<select data-lfs="used" aria-label="Lọc theo clip đang mở" '+(cur?'':'disabled title="Chưa mở clip nào ở tab Ghép clip"')+'><option value="">Clip đang mở'+(cur?' ('+esc(cur.id)+')':'')+': tất cả</option><option value="yes" '+(f.used==='yes'?'selected':'')+'>Đã dùng trong clip đang mở</option><option value="no" '+(f.used==='no'?'selected':'')+'>Chưa dùng</option></select>'+
     (lfActive()?'<button class="btn sm" data-lact="lfreset">Bỏ lọc</button>':'')+'</div>'+
-   (PRODUCTS.length?'<div class="lfrow prods"><span class="meta">Sản phẩm:</span>'+PRODUCTS.map(function(p){return chip(f.prods.indexOf(p.name)>=0,'prod',p.name,esc(p.name)+' <small>'+prodCount(p.name)+'</small>')}).join('')+'</div>':'')+
-   '<div class="lfrow selrow"><b id="libcnt"></b><span id="selcnt" class="meta"></span>'+
+   (PRODUCTS.length?'<div class="lfrow prods"><span class="lfl">Sản phẩm</span>'+PRODUCTS.map(function(p){return chip(f.prods.indexOf(p.name)>=0,'prod',p.name,esc(p.name)+' <small>'+prodCount(p.name)+'</small>')}).join('')+'</div>':'')+
+   '<div class="lfrow selrow"><span class="lfl">Chọn</span><b id="libcnt"></b><span id="selcnt" class="meta"></span>'+
     '<button class="btn sm" data-lact="selall">Chọn tất cả đang lọc</button><button class="btn sm" data-lact="selnone" data-needsel>Bỏ chọn</button>'+
     '<span class="sep"></span><input type="text" id="bulkp" list="plist" placeholder="Sản phẩm (chọn hoặc gõ mới)" style="max-width:210px" aria-label="Sản phẩm để gán"><button class="btn sm pri" data-lact="bprod" data-needsel>Gán sản phẩm</button>'+
     '<select id="bulko" style="width:auto" aria-label="Trạng thái để đổi"><option>thô</option><option>đã dựng</option><option>đã đăng</option></select><button class="btn sm" data-lact="bstat" data-needsel>Đổi trạng thái</button>'+

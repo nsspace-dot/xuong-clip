@@ -562,3 +562,19 @@ input[type=datetime-local]{background:var(--bg);border:1px solid var(--line);bor
 .vdesc{font-size:12px;color:var(--muted)}.vpres .chip{font-size:11px}
 .vcreate{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
 @media (max-width:900px){.vmgrid{grid-template-columns:1fr}}
+.undog{display:inline-flex;gap:2px}.undog .btn{min-width:32px;font-size:15px;padding:2px 8px}
+.tlfr{position:absolute;inset:0;pointer-events:none}.tlfk{position:absolute;top:0;bottom:0;background-size:cover;background-position:center;border-right:1px solid rgba(0,0,0,.35)}
+.tlfk:not([style*="background-image"]){background:transparent}
+/* ---------- Bước 9: bố cục Cài đặt, Thư viện, gợi ý bước đầu ---------- */
+.hint{border-radius:10px;padding:9px 12px;margin:10px 0;font-size:13px;border:1px solid var(--line);background:var(--panel2)}
+.hint.warn{border-color:var(--warn);background:rgba(245,165,36,.08)}.hint.ok{color:var(--muted)}.hint a{color:var(--accent)}
+.cset{max-width:1800px}.cnav{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px;position:sticky;top:0;z-index:5;background:var(--bg);padding:6px 0}
+.cgrp{margin-top:18px}.cgh{font-size:15px;margin:0 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line);color:var(--accent);letter-spacing:.2px}
+.cgb{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,540px),1fr));gap:12px;align-items:start}
+.cgb>.set{margin:0}.cgb .set input[type=text],.cgb .set input[type=password],.cgb .set input[type=number],.cgb .set select{max-width:100%}
+.lfl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);min-width:64px}
+.libbar .lfrow+.lfrow{border-top:1px solid var(--line);padding-top:8px;margin-top:8px}
+.kberr ul{margin:6px 0 6px 18px;padding:0}.kberr li{margin:2px 0}
+.cgb.one{grid-template-columns:1fr}
+#vdefs{grid-column:1/-1}.cgb .set .tbl{overflow-x:auto}
+.shoot .tbl{margin-top:8px}

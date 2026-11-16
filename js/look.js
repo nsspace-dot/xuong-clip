@@ -51,7 +51,7 @@ function pvKick(){if(!pvRaf)pvRaf=requestAnimationFrame(pvLoop)}
 /* ---------- Inspector: mục Hình ảnh ---------- */
 function lookBox(c,l,i){var f=lineFlt(l),fx=lineFx(l),cur=LOOKS.filter(function(p){var q=p[2];return q.b===f.b&&q.c===f.c&&q.s===f.s&&q.sh===f.sh})[0];
   var sl=function(k,lab){var r=FLTR[k];return '<label class="lsl">'+lab+'<input type="range" min="'+r[0]+'" max="'+r[1]+'" step="1" value="'+f[k]+'" data-flt="'+k+'" aria-label="'+lab+'"><span class="tc" data-fltv="'+k+'">'+(f[k]>0&&k!=='sh'?'+':'')+f[k]+'</span></label>'};
-  return '<details class="sec look" open><summary class="lab">Hình ảnh của dòng '+(i+1)+(fltZero(f)?'':' · đã lọc')+(fxZero(fx)?'':' · đã chỉnh khung')+'</summary>'+
+  return '<details class="sec look" data-sec="look"'+secAttr('look',true)+'><summary class="lab">Hình ảnh của dòng '+(i+1)+(fltZero(f)?'':' · đã lọc')+(fxZero(fx)?'':' · đã chỉnh khung')+'</summary>'+
    '<div class="chips lks">'+LOOKS.map(function(p){return '<button class="chip'+(cur&&cur[0]===p[0]?' on':'')+'" data-look="p|'+p[0]+'">'+p[1]+'</button>'}).join('')+'</div>'+
    sl('b','Độ sáng')+sl('c','Tương phản')+sl('s','Bão hòa')+sl('sh','Sắc nét')+
    '<div class="bar" style="margin-top:4px"><button class="btn sm" data-look="reset">Đặt lại</button><button class="btn sm" data-cmp="1" title="Đè giữ để xem bản gốc, thả ra xem bản đã lọc">Giữ để so sánh</button></div>'+

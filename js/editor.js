@@ -4,8 +4,10 @@
 (function(){var o=null;try{o=JSON.parse(localStorage.getItem('xuongclip_panels')||'null')}catch(e){}
   S.pL=o&&typeof o.L==='boolean'?o.L:(window.innerWidth<1600);S.pR=o&&typeof o.R==='boolean'?o.R:false;S.fs=false;S.chkOpen=false})();
 /* Mục Inspector nhớ trạng thái mở / đóng giữa các lần vẽ lại. */
+S.secOpen=(function(){try{return JSON.parse(localStorage.getItem('xuongclip_secs')||'{}')||{}}catch(e){return {}}})();
 function secAttr(k,def){var v=S.secOpen&&S.secOpen[k];return (v===undefined?def:v)?' open':''}
-document.addEventListener('click',function(e){var sm=e.target.closest&&e.target.closest('summary'),d=sm&&sm.parentElement;if(d&&d.dataset&&d.dataset.sec&&sm===d.firstElementChild){S.secOpen=S.secOpen||{};S.secOpen[d.dataset.sec]=!d.open}},true); // bắt trước khi bấm làm vẽ lại
+function saveSecs(){try{localStorage.setItem('xuongclip_secs',JSON.stringify(S.secOpen||{}))}catch(e){}}
+document.addEventListener('click',function(e){var sm=e.target.closest&&e.target.closest('summary'),d=sm&&sm.parentElement;if(d&&d.dataset&&d.dataset.sec&&sm===d.firstElementChild){S.secOpen=S.secOpen||{};S.secOpen[d.dataset.sec]=!d.open;saveSecs()}},true); // bắt trước khi bấm làm vẽ lại
 function savePanels(){try{localStorage.setItem('xuongclip_panels',JSON.stringify({L:S.pL,R:S.pR}))}catch(e){}}
 function tc(s){s=Math.max(0,+s||0);var m=Math.floor(s/60),r=s-m*60;return ('0'+m).slice(-2)+':'+(r<10?'0':'')+r.toFixed(1)}
 /* Đèn trạng thái của một dòng: lỗi / thiếu cảnh / cảnh báo / sẵn sàng. */
@@ -24,7 +26,7 @@ function edTop(c,tot){
   return '<div class="etop">'+chkDot(c)+sel+'<span class="tc" title="Tổng thời lượng'+(endOn(c)?' (kể cả khung kết)':'')+'">'+tc(tot+endDur(c))+'</span><span class="meta eg">'+esc(c.g)+(c.prod?' · '+esc(c.prod):'')+'</span><button class="vchip" data-vmopen="clip|'+esc(c.id)+'" title="Giọng đang dùng (theo '+esc(vcFor(c).src)+'). Bấm để chọn giọng">Giọng: '+esc(voiceLabel(vcFor(c).voice))+'</button>'+
    '<div class="chkw"><button class="chkt" id="chkt" data-ui="chk" aria-expanded="'+(S.chkOpen?'true':'false')+'">'+chkSum(c)+'</button>'+
    '<div class="chk chkdd" id="chkbox"'+(S.chkOpen?'':' hidden')+'>'+chkPanel(c)+'</div></div>'+
-   '<span class="sp"></span><button class="btn sm" data-auto="'+esc(c.id)+'">Ghép lại tự động</button>'+
+   '<span class="sp"></span>'+undoHTML(c)+'<button class="btn sm" data-auto="'+esc(c.id)+'">Ghép lại tự động</button>'+
    '<button class="btn sm" data-ui="fs" title="Phóng toàn màn hình phần xem thử và thanh thời gian (Esc để thoát)">'+(S.fs?'Thoát toàn màn hình':'Toàn màn hình')+'</button>'+
    '<button class="btn pri" id="expbtn" data-act="export" '+((checkClip(c).errs.length||S.exporting)?'disabled':'')+'>'+esc(expLabel(c))+'</button></div>'}
 function edLib(c){
@@ -43,7 +45,7 @@ function edRows(c){
      '<span class="lth" style="'+(sg?bg(sg):'')+'"></span><span class="ld" data-t="'+i+'">'+tc(l.e-l.s)+'</span></div>'}).join('')+'</div>'}
 /* Chi tiết của dòng i (dùng trong Inspector), giữ nguyên các ô và nút cũ. */
 function lineDetail(c,l,i){
-  var sg=lineSeg(l),h='<div class="line cur" data-li="'+i+'"><div class="lh"><b>Dòng '+(i+1)+'</b>'+lineMark(c,i)+'<span class="mono" data-t="'+i+'">'+tc(l.s)+' – '+tc(l.e)+' · '+wc(l.t)+' từ</span></div>'+
+  var sg=lineSeg(l),h='<details class="sec grp" data-sec="line"'+secAttr('line',true)+'><summary class="lab">Dòng '+(i+1)+' · lời và cảnh</summary><div class="line cur" data-li="'+i+'"><div class="lh"><b>Dòng '+(i+1)+'</b>'+lineMark(c,i)+'<span class="mono" data-t="'+i+'">'+tc(l.s)+' – '+tc(l.e)+' · '+wc(l.t)+' từ</span></div>'+
    '<label class="lab">Lời thoại</label><textarea data-th="'+i+'" aria-label="Lời thoại dòng '+(i+1)+'">'+esc(l.t)+'</textarea><div class="need">Cảnh cần: '+esc(l.need)+'</div>'+
    '<div class="sec"><div class="lab">Cảnh</div><div class="seg">'+(sg?'<div class="thumb" style="'+bg(sg)+'"></div><div class="sgi"><div>'+esc(sg.label)+'</div><div class="meta">'+sid(sg.id)+' · '+sg.o+' · '+sg.d+'s'+((l.segIn||l.segOut)?' · từ '+(l.segIn||0)+' đến '+(l.segOut||sg.d):'')+'</div></div>':lineLost(l)?'<span class="pill p-loi">Mất cảnh</span><span class="meta">'+esc(lostWhy(l))+'. Bấm Đổi cảnh để chọn lại.</span>':'<span class="pill p-missing">Chưa có cảnh</span>')+
    '</div><div class="bar" style="margin-top:4px">'+(sg?'<button class="btn sm" data-pv="'+sg.id+'|'+esc(c.id)+'|'+i+'">Xem / cắt đoạn</button>':'')+'<button class="btn sm" data-ch="'+i+'">'+(l.choose?'Đóng gợi ý':'Đổi cảnh')+'</button>'+
@@ -55,9 +57,9 @@ function lineDetail(c,l,i){
     h+='<div class="cands2">'+(good.length?good.map(function(r){return candRow(c,i,r)}).join(''):'<div class="meta">'+(canonicalProduct(c.prod)?'Không có video "'+esc(canonicalProduct(c.prod))+'" nào đủ '+SG.min+' điểm cho dòng này.':'Clip chưa ghi sản phẩm nên không gợi ý được.')+'</div>')+
       (low.length?'<details><summary>'+low.length+' video cùng sản phẩm chưa đủ điểm hoặc trùng đoạn (chỉ tự chọn khi chắc chắn)</summary>'+low.map(function(r){return candRow(c,i,r)}).join('')+'</details>':'')+
       '<div class="bar" style="margin-top:4px"><button class="btn sm" data-pick="'+i+'|none|0">Bỏ chọn (báo thiếu)</button></div></div>'}
-  h+='</div>'+(sg?lookBox(c,l,i):'')+'<div class="sec"><div class="lab">Thời lượng, tốc độ, chuyển cảnh</div><div class="lctl">'+lineCtl(c,l,i)+'</div>'+
-   (i>0?'<label class="lab">Chuyển vào cảnh này<select data-ltr="'+i+'" aria-label="Chuyển vào cảnh này"><option value="">Theo mặc định ('+TRN[TR.type]+')</option>'+Object.keys(TRN).map(function(k){return '<option value="'+k+'" '+(l.tr===k?'selected':'')+'>'+TRN[k]+'</option>'}).join('')+'</select></label>':'')+'</div>';
-  h+='<details class="sec infos" open><summary class="lab">Chữ hiện ('+l.infos.length+')</summary>'+l.infos.map(function(x,k){var ct=cue(l,x),sp=infoSpan(l,x);
+  h+='</div></details>'+(sg?lookBox(c,l,i):'')+'<details class="sec grp" data-sec="dur"'+secAttr('dur',true)+'><summary class="lab">Thời lượng, tốc độ, chuyển cảnh</summary><div class="lctl">'+lineCtl(c,l,i)+'</div>'+
+   (i>0?'<label class="lab">Chuyển vào cảnh này<select data-ltr="'+i+'" aria-label="Chuyển vào cảnh này"><option value="">Theo mặc định ('+TRN[TR.type]+')</option>'+Object.keys(TRN).map(function(k){return '<option value="'+k+'" '+(l.tr===k?'selected':'')+'>'+TRN[k]+'</option>'}).join('')+'</select></label>':'')+'</details>';
+  h+='<details class="sec infos" data-sec="infos"'+secAttr('infos',true)+'><summary class="lab">Chữ hiện ('+l.infos.length+')</summary>'+l.infos.map(function(x,k){var ct=cue(l,x),sp=infoSpan(l,x);
     return '<div class="irow3"><div class="ir1"><input type="text" data-ix="'+i+'|'+k+'" value="'+esc(x.x)+'" aria-label="Chữ hiện"><select class="ist" data-ist="'+i+'|'+k+'" aria-label="Kiểu chữ" title="Kiểu chữ">'+tsOptions(x.st||'',c,true)+'</select><button class="btn xs" data-delinfo="'+i+'|'+k+'" aria-label="Xóa chữ này" title="Xóa chữ này">×</button></div>'+
      '<details class="ir2"><summary>Cụm "'+esc(x.ph||'')+'" · '+(sp?tc(sp.a)+' – '+tc(sp.b):'không khớp')+'</summary><div class="ir2g">'+
      '<label class="lc">Cụm làm mốc<input type="text" data-ip="'+i+'|'+k+'" value="'+esc(x.ph)+'" aria-label="Cụm trong thoại"></label>'+
@@ -70,10 +72,10 @@ function edInspector(c){var li=Math.min(S.li,c.lines.length-1),l=c.lines[li];
   return '<aside class="pnl pr" aria-label="Thuộc tính dòng"><div class="ph"><b>'+(S.pR?'':'Thuộc tính')+'</b><button class="pt" data-ui="pr" title="'+(S.pR?'Mở':'Thu gọn')+' bảng thuộc tính">'+(S.pR?'‹':'›')+'</button></div>'+
    (S.pR?'<div class="prail" data-ui="pr">Thuộc tính</div>':'<div class="pb">'+lineDetail(c,l,li)+
    '<details class="sec ts" data-sec="ts"'+secAttr('ts',false)+'><summary class="lab">Kiểu chữ ('+TS.list.length+')</summary>'+tsBox(c)+'</details>'+
-   '<details class="sec" open><summary class="lab">Giọng đọc của clip</summary>'+voiceInner(c)+'</details>'+
+   '<details class="sec" data-sec="voice"'+secAttr('voice',true)+'><summary class="lab">Giọng đọc của clip</summary>'+voiceInner(c)+'</details>'+
    '<details class="sec mus" data-sec="mus"'+secAttr('mus',!!c.music)+'><summary class="lab">Nhạc nền'+(c.music?' · '+esc(c.music.name||''):'')+'</summary>'+musicBox(c)+'</details>'+
    '<details class="sec endc" data-sec="endc"'+secAttr('endc',endOn(c))+'><summary class="lab">Khung kết'+(endOn(c)?' · '+fmt1(endDur(c))+'s':' · tắt')+'</summary>'+endBox(c)+'</details>'+
-   '<details class="sec"><summary class="lab">Ảnh bìa</summary>'+coverBox(c)+'</details>'+
+   '<details class="sec" data-sec="cov"'+secAttr('cov',false)+'><summary class="lab">Ảnh bìa</summary>'+coverBox(c)+'</details>'+
    '<details class="sec" data-sec="exp"'+secAttr('exp',true)+'><summary class="lab">Xuất</summary>'+expQualityHTML(c)+captBox(c)+(S.exporting?'<div class="bar"><button class="btn sm" data-qact="cancel">Hủy xuất</button></div>':'')+'<div class="meta" id="expst"></div>'+
    (c.out&&!c.out.url?'<div class="meta">Đã xuất trước đây: '+esc(c.out.name||'')+' ('+esc(c.out.mb||'?')+' MB). Bản xem trong trình duyệt không còn sau khi tải lại trang.</div>':'')+
    (c.out&&c.out.url?'<video src="'+c.out.url+'" controls playsinline style="width:160px;border-radius:8px;background:#000"></video><div class="bar"><a class="btn pri sm" href="'+c.out.url+'" download="'+esc(c.out.name||(c.id+'.'+c.out.ext))+'">Tải video về ('+c.out.ext+', '+c.out.mb+' MB)</a></div>':'')+'</details></div>')+'</aside>'}
