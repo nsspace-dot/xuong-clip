@@ -1,7 +1,38 @@
 # Xưởng Clip
 
 Công cụ dựng video TikTok 9:16 từ source quay sẵn. Chạy hoàn toàn trên trình duyệt, không có bước build, không dùng framework.
-Chỉ chạy trên **Chrome hoặc Edge** bản máy tính (cần API chọn thư mục `showDirectoryPicker`).
+
+## Hướng dẫn nhanh cho người mới
+
+1. **Mở app**: địa chỉ GitHub Pages của repo, thường là https://nsspace-dot.github.io/xuong-clip/ (do chủ repo bật trong Settings › Pages; nhánh nào được chọn thì bản đó chạy). Hoặc chạy cục bộ, xem mục "Mở thử" ở cuối.
+2. **Trình duyệt**: chỉ **Chrome hoặc Edge** bản máy tính (cần quyền chọn thư mục). Firefox, Safari, điện thoại không chạy được.
+3. **Bước đầu tiên: chọn thư mục source** ở tab **Thư viện source** › Chọn thư mục source (thư mục chứa video quay sẵn).
+   Chưa chọn thì luật, cài đặt và clip chỉ nằm trong trình duyệt, mất khi xóa dữ liệu trình duyệt hoặc đổi máy.
+   Tool chỉ ghi vào thư mục con `.xuongclip`, không bao giờ xóa, đổi tên hay di chuyển video.
+4. **Nhập API key Gemini** ở tab **Cài đặt** › Người và giọng đọc. Key chỉ lưu trong trình duyệt của máy đó, không ghi vào thư mục source, không lên repo.
+5. **Mỗi người một thư mục source riêng và một key riêng.** Một thư mục chỉ cho một tab ghi tại một thời điểm; tab thứ hai tự chuyển sang "Chỉ đọc".
+6. **Nạp kịch bản** ở tab **Kịch bản**: dán văn bản hoặc chọn file .txt, mỗi clip:
+
+   ```
+   ## MÃ | Gian | Sản phẩm | Tên clip | NGƯỜI
+   Lời thoại | Cảnh cần thấy | cụm trong lời=chữ hiện trên hình; cụm khác=chữ khác
+   ```
+
+   Mỗi dòng thoại một dòng. Trùng mã thì tool hỏi ghi đè hay bỏ qua; dòng sai định dạng được báo kèm số dòng.
+   Nút "Tải kịch bản theo người" xuất lại mỗi người một file cùng định dạng này.
+7. **Ghép và xuất**: bấm Ghép cảnh tự động, chỉnh ở tab **Ghép clip**, tạo giọng, rồi bấm Xuất (hoặc Xuất hàng loạt ở tab **Clip đã xuất**).
+   File mp4 và file .txt cùng tên (lời thoại + caption bạn tự viết) được lưu vào **thư mục lưu clip** chọn ở Cài đặt › Thư mục lưu clip;
+   chưa chọn thì bấm "Tải về" trong tab Clip đã xuất. Nên dùng một thư mục riêng, không phải Downloads hay Desktop.
+
+**Giới hạn đã biết**
+- Vùng an toàn TikTok (trên 8%, dưới 22%, phải 14%, trái 4%) là **số ước lượng, chưa kiểm chứng**.
+- **Âm thanh của file xuất (giọng + nhạc nền) chưa được kiểm trên máy thật**; máy test tự động không mã hóa được AAC nên chỉ thử bằng đường ghi thời gian thật và giả lập.
+- Chưa nghe thử giọng Gemini thật (test dùng API giả lập). Chức năng "Tạo giọng mới" bằng mô tả chưa làm.
+- Tốc độ xuất phụ thuộc máy: trên máy test, clip 50 giây 1080p mất khoảng 4–6 phút.
+
+---
+
+Phần dưới đây là mô tả kỹ thuật chi tiết.
 
 ## Cấu trúc thư mục
 
@@ -136,7 +167,7 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
 ## Màn Xưởng
 
 - Tab đầu tiên, mở mặc định. Mỗi clip tự rơi vào một trạm theo dữ liệu: Kịch bản (chưa gán cảnh nào) → Ghép cảnh (thiếu cảnh hoặc chưa có giọng) → Kiểm tra (đủ cảnh và giọng, còn LỖI) → Sẵn sàng xuất → Đã xuất → Đã đăng (người dùng tự đánh dấu, có hoàn tác). Clip quay trực tiếp nằm ở Sẵn sàng xuất chờ đánh dấu đã đăng.
-- Mốc hạn chót nhập tay: tên, ngày giờ (múi giờ máy), mục tiêu % clip tới trạm đích; đếm ngược, thanh tiến độ, vàng khi còn dưới 24 giờ mà chưa đạt, đỏ khi quá hạn chưa đạt.
+- Mốc hạn chót nhập tay: tên, ngày giờ (múi giờ máy), mục tiêu % clip tới trạm đích; đếm ngược, thanh tiến độ, vàng khi còn dưới ngưỡng "sát hạn" (mặc định 24 giờ, đổi ở Cài đặt) mà chưa đạt, đỏ khi quá hạn chưa đạt.
 - Lọc theo người, gian, trạm, có lỗi, thiếu source; xem theo trạm hoặc theo người. Bộ lọc nhớ trong trình duyệt.
 
 ## Giao diện phòng dựng
