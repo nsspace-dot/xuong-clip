@@ -4,11 +4,13 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="css/style.css">
+<script>/* giao diện sáng / tối: đặt trước khi vẽ để không nháy; mặc định sáng */try{document.documentElement.setAttribute('data-theme',localStorage.getItem('xuongclip_theme')==='dark'?'dark':'light')}catch(e){document.documentElement.setAttribute('data-theme','light')}</script>
 </head><body>
 <div class="wrap">
 <header class="top">
   <div class="brand">Xưởng Clip Newshop<small>Bản thô để thử</small></div>
   <nav id="nav"></nav>
+  <button id="themetog" class="themetog" type="button" aria-label="Đổi giao diện sáng / tối"></button>
   <span id="savebadge" class="savebadge" aria-live="polite"></span>
 </header>
 <div id="srcbar"></div>
@@ -45,5 +47,6 @@
 <script src="js/kbview.js"></script>
 <script src="js/xuong.js"></script>
 <script src="js/events.js"></script>
+<script src="js/theme.js"></script>
 <script src="js/main.js"></script>
 </body></html>

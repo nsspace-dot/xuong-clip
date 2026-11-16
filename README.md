@@ -6,6 +6,7 @@ Công cụ dựng video TikTok 9:16 từ source quay sẵn. Chạy hoàn toàn t
 
 1. **Mở app**: địa chỉ GitHub Pages của repo, thường là https://nsspace-dot.github.io/xuong-clip/ (do chủ repo bật trong Settings › Pages; nhánh nào được chọn thì bản đó chạy). Hoặc chạy cục bộ, xem mục "Mở thử" ở cuối.
 2. **Trình duyệt**: chỉ **Chrome hoặc Edge** bản máy tính (cần quyền chọn thư mục). Firefox, Safari, điện thoại không chạy được.
+   Giao diện mặc định là **Sáng**; công tắc **Sáng / Tối** ở thanh trên, lựa chọn nhớ trong trình duyệt.
 3. **Bước đầu tiên: chọn thư mục source** ở tab **Thư viện source** › Chọn thư mục source (thư mục chứa video quay sẵn).
    Chưa chọn thì luật, cài đặt và clip chỉ nằm trong trình duyệt, mất khi xóa dữ liệu trình duyệt hoặc đổi máy.
    Tool chỉ ghi vào thư mục con `.xuongclip`, không bao giờ xóa, đổi tên hay di chuyển video.
@@ -69,6 +70,7 @@ js/
   kbview.js         Tab Kịch bản: nạp theo đợt, trùng mã, lưu trữ đợt, xóa mềm
   libview.js        Tab Thư viện (lọc, chọn nhiều, gắn hàng loạt, hoàn tác) và phần danh mục / quy tắc ở Cài đặt
   events.js         Bắt sự kiện click / nhập / kéo thả
+  theme.js          Công tắc giao diện Sáng / Tối (localStorage)
   main.js           Khởi động (nạp cuối cùng)
 ```
 
@@ -172,7 +174,7 @@ Thứ duy nhất tool ghi ra là thư mục con `.xuongclip`:
 
 ## Giao diện phòng dựng
 
-- Nền tối, toàn bộ màu là biến CSS ở đầu `css/style.css` (`--bg`, `--panel`, `--line`, `--fg`, `--muted`, `--accent`, `--ok`, `--warn`, `--err`).
+- Hai bộ màu Sáng (mặc định) và Tối, toàn bộ là biến CSS ở đầu `css/style.css` (`[data-theme="light"]`, `[data-theme="dark"]`: `--bg`, `--panel`, `--line`, `--fg`, `--muted`, `--accent`, `--accent-ink` cho chữ màu nhấn, `--ok`, `--warn`, `--err`...). Canvas (sóng giọng, thanh thời gian) đọc màu từ biến lúc vẽ; đổi giao diện thì vẽ lại.
 - Màn Ghép clip: thanh trên (chọn clip, đèn trạng thái, tổng thời lượng, Kiểm tra, Xuất), thư viện bên trái và Inspector bên phải thu gọn được (nhớ trạng thái), khung xem thử 9:16, danh sách dòng mỗi dòng một hàng, thanh thời gian nhiều tầng ở dưới, nút Toàn màn hình.
 - Phím tắt trên màn Ghép clip (không bắt khi đang gõ): Space phát/dừng, ← → một khung hình (Shift: 1 giây), [ ] dòng trước/sau, I / O điểm đầu/cuối đoạn video tại kim chạy, ? bảng phím tắt.
 

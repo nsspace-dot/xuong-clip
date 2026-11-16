@@ -49,7 +49,7 @@ function paintWave(cv,c,view){
   for(i=0;i<pk.length;i++){var xx=X(i/pk.length*D);if(xx<-2||xx>W)continue;var h=Math.max(1,pk[i]*(H-44));g.fillRect(xx,mid-h/2,Math.max(1,bw-0.4),h)}
   if(big){g.fillStyle=mut;g.font='16px sans-serif';g.textBaseline='bottom';var tk=sp>10?1:0.5;for(var t=Math.ceil(t0/tk)*tk;t<t1;t+=tk){var xt=X(t);g.fillRect(xt,H-8,1,8);g.fillText(t.toFixed(tk<1?1:0)+'s',xt+3,H-8)}}
   for(i=0;i<=N;i++){var x=X(b[i]);if(x<-8||x>W+8)continue;var sel=(S.wk===i);
-    g.strokeStyle=sel?'#C9922B':acc;g.fillStyle=sel?'#C9922B':acc;g.lineWidth=sel?5:3;g.beginPath();g.moveTo(x,0);g.lineTo(x,H);g.stroke();g.beginPath();g.arc(x,H-14,sel?10:7,0,6.3);g.fill()}}
+    var ws=cs.getPropertyValue('--wsel').trim()||'#C9922B';g.strokeStyle=sel?ws:acc;g.fillStyle=sel?ws:acc;g.lineWidth=sel?5:3;g.beginPath();g.moveTo(x,0);g.lineTo(x,H);g.stroke();g.beginPath();g.arc(x,H-14,sel?10:7,0,6.3);g.fill()}}
 function drawWave(c){
   var c1=document.getElementById('wavec'),cx=document.getElementById('wavex');if(!c.audioDur||!c.lines.length||(!c1&&!cx))return;
   if(c.peaksUrl!==c.audioUrl||!c.peaks){ensurePeaks(c,function(){drawWave(c)});return}
